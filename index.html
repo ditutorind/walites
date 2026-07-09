@@ -391,13 +391,8 @@ function dWaliApp() {
         notif: { show: false, text: '' },
 
         // DATA
-        students: [
-            { id: 's1', name: 'Budi', nis: '12345', class: '7A', is_potensi_filled: false, perbuatan_baik_today: false, nilai: 85, sikap: 'Baik', catatan: 'Aktif', potensi: {} },
-            { id: 's2', name: 'Siti', nis: '12346', class: '7A', is_potensi_filled: true, perbuatan_baik_today: true, nilai: 90, sikap: 'Sangat Baik', catatan: 'Rajin', potensi: {} }
-        ],
-        curhats: [
-            { id: 'c1', student_id: 's2', untuk: 'Aku sendiri', kategori: 'Sekolah', sub: 'Pelajaran', tingkat_darurat: 'Saran', cerita: 'Saya kesulitan matematika pak', is_read: false, balasan: 'Nanti saya bantu belajar sore ya.', created_at: new Date().toISOString() }
-        ],
+        students: [],
+        curhats: [],
         
         // FORMS
         potensiForm: { minat: '', gaya: '', cita_cita: '', karakter: '', ekskul: '' },
@@ -411,7 +406,7 @@ function dWaliApp() {
         curhatForm: { untuk: '', kategori: '', sub: '', darurat: '', cerita: '' },
 
         // SYNC CONFIG
-        SHEET_URL: 'https://script.google.com/macros/s/AKfycbzMDDPXHqNwhiq8_4JKwHOo6wrUq_3c_DbMddMsp0FTtj3vEiJ94GCWF4c6166Pj2ZMRw/exec', // GANTI DENGAN URL KAMU
+        SHEET_URL: 'https://script.google.com/macros/s/AKfycbzMDDPXHqNwhiq8_4JKwHOo6wrUq_3c_DbMddMsp0FTtj3vEiJ94GCWF4c6166Pj2ZMRw/exec',
         isSyncing: false,
 
         // ============ INIT ============
@@ -424,35 +419,52 @@ function dWaliApp() {
             try {
                 this.showNotif('⏳ Loading data...');
                 
-                const studentResponse = await fetch(this.SHEET_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'getStudents' })
-                });
-                
-                const studentData = await studentResponse.json();
-                if (studentData.status === 'success' && studentData.data.length > 0) {
-                    this.students = studentData.data;
-                }
-                
-                const curhatResponse = await fetch(this.SHEET_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'getCurhats' })
-                });
-                
-                const curhatData = await curhatResponse.json();
-                if (curhatData.status === 'success') {
-                    this.curhats = curhatData.data || [];
-                }
+                // Coba load students
+                await this.fetchData('getStudents', 'students');
+                await this.fetchData('getCurhats', 'curhats');
                 
                 this.showNotif('✅ Data loaded from spreadsheet!');
                 
             } catch(error) {
                 console.error('Load error:', error);
-                this.showNotif('⚠️ Gagal load data, pakai data lokal');
+                // Fallback ke data lokal
+                if (this.students.length === 0) {
+                    this.students = [
+                        { id: 's1', name: 'Budi', nis: '12345', class: '7A', is_potensi_filled: false, perbuatan_baik_today: false, nilai: 85, sikap: 'Baik', catatan: 'Aktif', potensi: {} },
+                        { id: 's2', name: 'Siti', nis: '12346', class: '7A', is_potensi_filled: true, perbuatan_baik_today: true, nilai: 90, sikap: 'Sangat Baik', catatan: 'Rajin', potensi: {} }
+                    ];
+                }
+                if (this.curhats.length === 0) {
+                    this.curhats = [
+                        { id: 'c1', student_id: 's2', untuk: 'Aku sendiri', kategori: 'Sekolah', sub: 'Pelajaran', tingkat_darurat: 'Saran', cerita: 'Saya kesulitan matematika pak', is_read: false, balasan: 'Nanti saya bantu belajar sore ya.', created_at: new Date().toISOString() }
+                    ];
+                }
+                this.showNotif('⚠️ Pakai data lokal (offline mode)');
+            }
+        },
+
+        async fetchData(action, targetKey) {
+            try {
+                const response = await fetch(this.SHEET_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: action })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if (result.status === 'success' && result.data) {
+                    this[targetKey] = result.data;
+                    console.log(`✅ ${action} loaded:`, result.data.length);
+                }
+            } catch(error) {
+                console.warn(`Failed to load ${action}:`, error);
+                throw error;
             }
         },
 
@@ -460,20 +472,23 @@ function dWaliApp() {
             try {
                 const response = await fetch(this.SHEET_URL, {
                     method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         action: 'saveStudent',
                         student: student
                     })
                 });
                 
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const result = await response.json();
                 if (result.status === 'success') {
-                    console.log('Student synced:', student.name);
+                    console.log('✅ Student synced:', student.name);
                 }
             } catch(error) {
-                console.error('Sync error:', error);
+                console.error('Sync student error:', error);
+                this.showNotif('⚠️ Gagal sync siswa: ' + error.message);
             }
         },
 
@@ -481,20 +496,27 @@ function dWaliApp() {
             try {
                 const response = await fetch(this.SHEET_URL, {
                     method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         action: 'saveCurhat',
                         curhat: curhat
                     })
                 });
                 
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const result = await response.json();
                 if (result.status === 'success') {
-                    console.log('Curhat synced');
+                    console.log('✅ Curhat synced');
+                    return true;
+                } else {
+                    throw new Error(result.message || 'Unknown error');
                 }
             } catch(error) {
-                console.error('Sync error:', error);
+                console.error('Sync curhat error:', error);
+                this.showNotif('⚠️ Gagal sync curhat: ' + error.message);
+                return false;
             }
         },
 
@@ -502,8 +524,9 @@ function dWaliApp() {
             try {
                 const response = await fetch(this.SHEET_URL, {
                     method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         action: 'replyCurhat',
                         curhatId: curhatId,
@@ -511,20 +534,25 @@ function dWaliApp() {
                     })
                 });
                 
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const result = await response.json();
                 if (result.status === 'success') {
-                    console.log('Reply synced');
+                    console.log('✅ Reply synced');
                 }
             } catch(error) {
-                console.error('Sync error:', error);
+                console.error('Sync reply error:', error);
+                this.showNotif('⚠️ Gagal sync balasan: ' + error.message);
             }
         },
 
         async syncAllStudents() {
+            this.showNotif('⏳ Syncing all data...');
+            let success = 0;
             for (let student of this.students) {
                 await this.syncStudentToSheet(student);
+                success++;
             }
-            this.showNotif('✅ Semua data tersinkronisasi!');
+            this.showNotif(`✅ ${success} data tersinkronisasi!`);
         },
 
         // ============ AUTH ============
@@ -554,8 +582,9 @@ function dWaliApp() {
                 this.isLoggedIn = true;
                 this.role = 'student';
                 this.studentView = student.is_potensi_filled ? 'dashboard' : 'potensi';
+                this.showNotif('👋 Selamat datang ' + student.name);
             } else {
-                this.showNotif('PIN/Password salah!');
+                this.showNotif('❌ PIN/Password salah!');
             }
         },
 
@@ -564,14 +593,16 @@ function dWaliApp() {
                 this.currentUser = { name: 'Pak Wali 7A' };
                 this.isLoggedIn = true;
                 this.role = 'admin';
+                this.showNotif('👋 Selamat datang Admin');
             } else {
-                this.showNotif('Password Wali salah!');
+                this.showNotif('❌ Password Wali salah!');
             }
         },
 
         logout() {
             this.isLoggedIn = false;
             this.currentUser = null;
+            this.showNotif('👋 Sampai jumpa!');
         },
 
         // ============ STUDENT FEATURES ============
@@ -632,21 +663,27 @@ function dWaliApp() {
             }
         },
 
-        submitCurhat() {
+        async submitCurhat() {
             const newCurhat = {
                 id: 'c'+Date.now(),
                 student_id: this.currentUser.id,
-                ...this.curhatForm,
+                untuk: this.curhatForm.untuk,
+                kategori: this.curhatForm.kategori,
+                sub: this.curhatForm.sub,
                 tingkat_darurat: this.curhatForm.darurat,
+                cerita: this.curhatForm.cerita,
                 is_read: false,
-                balasan: null,
+                balasan: '',
                 created_at: new Date().toISOString()
             };
             
+            // Simpan lokal dulu
             this.curhats.unshift(newCurhat);
-            this.syncCurhatToSheet(newCurhat);
             this.activeModal = null;
-            this.showNotif('✅ Terima kasih sudah curhat, sabar ya menunggu balasan dari Wali.');
+            this.showNotif('✅ Curhat terkirim!');
+            
+            // Sync ke sheet
+            await this.syncCurhatToSheet(newCurhat);
         },
 
         // ============ ADMIN FEATURES ============
@@ -661,13 +698,20 @@ function dWaliApp() {
             return s ? s.name : 'Unknown';
         },
 
-        replyCurhat(id) {
+        async replyCurhat(id) {
+            if (!this.tempReply || this.tempReply.trim() === '') {
+                this.showNotif('⚠️ Tulis balasan dulu!');
+                return;
+            }
+            
             let c = this.curhats.find(c => c.id === id);
             if(c) {
-                c.balasan = this.tempReply;
-                this.syncReplyToSheet(id, this.tempReply);
+                const replyText = this.tempReply;
+                c.balasan = replyText;
                 this.tempReply = '';
-                this.showNotif('Balasan terkirim!');
+                this.showNotif('✅ Balasan terkirim!');
+                
+                await this.syncReplyToSheet(id, replyText);
             }
         },
 
@@ -687,51 +731,70 @@ function dWaliApp() {
                 this.students.push(newStudent);
                 this.newStudent = { name: '', nis: '', class: '' };
                 this.syncStudentToSheet(newStudent);
-                this.showNotif('Siswa ditambahkan!');
+                this.showNotif('✅ Siswa ditambahkan!');
+            } else {
+                this.showNotif('⚠️ Nama dan NIS harus diisi!');
             }
         },
 
         resetPass(id) {
-            this.showNotif('Password siswa direset ke: 51sw@qu');
+            this.showNotif('🔑 Password siswa direset ke: 51sw@qu');
         },
 
         deleteStudent(id) {
-            this.students = this.students.filter(s => s.id !== id);
-            this.syncAllStudents();
-            this.showNotif('Siswa dihapus.');
+            if (confirm('Yakin hapus siswa ini?')) {
+                this.students = this.students.filter(s => s.id !== id);
+                this.syncAllStudents();
+                this.showNotif('🗑️ Siswa dihapus.');
+            }
         },
 
         // ============ EXPORT EXCEL ============
         exportExcel() {
-            let data = this.students.map(s => {
-                let jurnalCount = this.curhats.filter(c => c.student_id === s.id).length;
-                return {
-                    'Nama': s.name,
-                    'NIS': s.nis,
-                    'Kelas': s.class,
-                    'Nilai Akademik': s.nilai,
-                    'Sikap': s.sikap,
-                    'Catatan Khusus': s.catatan,
-                    'Jumlah Curhat': jurnalCount
+            try {
+                let data = this.students.map(s => {
+                    let curhatCount = this.curhats.filter(c => c.student_id === s.id).length;
+                    return {
+                        'Nama': s.name,
+                        'NIS': s.nis,
+                        'Kelas': s.class,
+                        'Nilai Akademik': s.nilai || 0,
+                        'Sikap': s.sikap || 'Baik',
+                        'Catatan Khusus': s.catatan || '',
+                        'Jumlah Curhat': curhatCount,
+                        'Potensi': s.potensi ? JSON.stringify(s.potensi) : ''
+                    }
+                });
+                
+                if (data.length === 0) {
+                    this.showNotif('⚠️ Tidak ada data untuk di-export');
+                    return;
                 }
-            });
-            
-            let ws = XLSX.utils.json_to_sheet(data);
-            const colWidths = Object.keys(data[0]).map(key => ({ 
-                wch: Math.max(key.length, ...data.map(d => String(d[key]).length)) 
-            }));
-            ws['!cols'] = colWidths;
+                
+                let ws = XLSX.utils.json_to_sheet(data);
+                const colWidths = Object.keys(data[0]).map(key => ({ 
+                    wch: Math.max(key.length, ...data.map(d => String(d[key]).length || 0)) + 5
+                }));
+                ws['!cols'] = colWidths;
 
-            let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Laporan Siswa");
-            XLSX.writeFile(wb, "Laporan_DWali.xlsx");
+                let wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Laporan Siswa");
+                XLSX.writeFile(wb, "Laporan_DWali.xlsx");
+                this.showNotif('✅ Excel berhasil di-download!');
+            } catch(error) {
+                console.error('Export error:', error);
+                this.showNotif('⚠️ Gagal export Excel: ' + error.message);
+            }
         },
 
         // ============ HELPER ============
         showNotif(text) {
             this.notif.text = text;
             this.notif.show = true;
-            setTimeout(() => { this.notif.show = false; }, 3000);
+            clearTimeout(this.notifTimeout);
+            this.notifTimeout = setTimeout(() => { 
+                this.notif.show = false; 
+            }, 4000);
         }
     }
 }
