@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>D'WALI - Digital Wali</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-dark {
+            background: rgba(6, 78, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=2070&auto=format&fit=crop');">
+
+<div x-data="dWaliApp()" x-init="init()" class="min-h-screen w-full flex justify-center text-white">
+
+    <!-- NOTIFICATION TOAST -->
+    <div x-show="notif.show" x-transition class="fixed top-4 left-1/2 -translate-x-1/2 z-50 glass-dark px-6 py-3 rounded-xl shadow-lg">
+        <span x-text="notif.text"></span>
+    </div>
+
+    <!-- LOGIN VIEW -->
+    <div x-show="!isLoggedIn" class="w-full max-w-md p-6 flex flex-col justify-center min-h-screen">
+        <div class="glass rounded-3xl p-8 text-center shadow-2xl">
+            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=300&auto=format&fit=crop" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-white/50" alt="Logo">
+            <h1 class="text-3xl font-extrabold text-yellow-300 tracking-wide">D'WALI</h1>
+            <p class="text-green-100 text-sm mb-6">Digital Wali Murid</p>
+            
+            <div class="flex gap-2 mb-6 bg-black/20 p-1 rounded-full">
+                <button @click="loginRole='student'" :class="loginRole==='student' ? 'bg-yellow-400 text-green-900' : 'text-white'" class="flex-1 py-2 rounded-full font-semibold transition">Siswa</button>
+                <button @click="loginRole='admin'" :class="loginRole==='admin' ? 'bg-yellow-400 text-green-900' : 'text-white'" class="flex-1 py-2 rounded-full font-semibold transition">Wali Kelas</button>
+            </div>
+
+            <!-- Student Login -->
+            <div x-show="loginRole==='student'" class="space-y-3">
+                <input type="text" x-model="loginForm.name" placeholder="Nama Siswa" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                <input type="text" x-model="loginForm.class" placeholder="Kelas (Misal: 7A)" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                <input type="password" x-model="loginForm.pin" placeholder="PIN / Password" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                <button @click="loginStudent()" class="w-full bg-yellow-400 text-green-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition">Masuk</button>
+            </div>
+
+            <!-- Admin Login -->
+            <div x-show="loginRole==='admin'" class="space-y-3">
+                <input type="email" x-model="loginForm.email" placeholder="Email Wali" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                <input type="password" x-model="loginForm.pass" placeholder="Password" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                <button @click="loginAdmin()" class="w-full bg-yellow-400 text-green-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STUDENT VIEW -->
+    <div x-show="isLoggedIn && role==='student'" class="w-full max-w-md pb-24 relative">
+        
+        <!-- MODAL PETA POTENSI -->
+        <div x-show="studentView==='potensi'" class="absolute inset-0 z-40 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="glass rounded-3xl p-6 w-full my-10">
+                <h2 class="text-2xl font-bold text-yellow-300 mb-2">Peta Potensi Siswa</h2>
+                <p class="text-sm text-green-100 mb-4">Lengkapi data diri ini sekali saja.</p>
+                
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <label class="font-semibold block mb-2">Minat (Pilih satu)</label>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="m in ['Olahraga','Seni','Sains','Teknologi','Bahasa','Lainnya']">
+                                <button @click="potensiForm.minat = m" :class="potensiForm.minat===m ? 'bg-yellow-400 text-green-900' : 'bg-white/20'" class="px-3 py-1 rounded-full text-xs" x-text="m"></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-semibold block mb-2">Gaya Belajar</label>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="g in ['Visual','Auditori','Kinestetik','Baca/Tulis']">
+                                <button @click="potensiForm.gaya = g" :class="potensiForm.gaya===g ? 'bg-yellow-400 text-green-900' : 'bg-white/20'" class="px-3 py-1 rounded-full text-xs" x-text="g"></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-semibold block mb-2">Cita-cita</label>
+                        <textarea x-model="potensiForm.cita_cita" class="w-full bg-white/20 rounded-xl p-3 text-white placeholder-green-100" rows="2" placeholder="Saya ingin menjadi..."></textarea>
+                    </div>
+                    <div>
+                        <label class="font-semibold block mb-2">Kekuatan Karakter</label>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="k in ['Pemberani','Baik Hati','Kreatif','Pantang Menyerah','Disiplin','Pemimpin','Jujur']">
+                                <button @click="potensiForm.karakter = k" :class="potensiForm.karakter===k ? 'bg-yellow-400 text-green-900' : 'bg-white/20'" class="px-3 py-1 rounded-full text-xs" x-text="k"></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-semibold block mb-2">Ekstrakurikuler</label>
+                        <input type="text" x-model="potensiForm.ekskul" class="w-full bg-white/20 rounded-xl p-3 text-white placeholder-green-100" placeholder="Pramuka, Futsal, dll">
+                    </div>
+                </div>
+                <button @click="savePotensi()" class="w-full bg-green-600 mt-6 py-3 rounded-xl font-bold hover:bg-green-500">Simpan & Lanjut</button>
+            </div>
+        </div>
+
+        <!-- STUDENT DASHBOARD -->
+        <div x-show="studentView==='dashboard'" class="min-h-screen p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <p class="text-green-100 text-sm">Selamat datang,</p>
+                    <h1 class="text-2xl font-bold" x-text="currentUser.name"></h1>
+                </div>
+                <button @click="logout()" class="glass-dark p-2 rounded-full text-xs">Keluar</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Perbuatan Baik -->
+                <div class="col-span-2 glass rounded-3xl p-6 text-center">
+                    <h3 class="font-bold text-lg mb-3">Perbuatan Baik Hari Ini</h3>
+                    <template x-if="!currentUser.perbuatan_baik_today">
+                        <button @click="openModal('perbuatanBaik')" class="bg-yellow-400 text-green-900 text-5xl w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-lg">⭐</button>
+                    </template>
+                    <template x-if="currentUser.perbuatan_baik_today">
+                        <div class="text-green-300 font-bold py-4">✔️ Sudah Berbuat Baik Hari Ini!</div>
+                    </template>
+                </div>
+
+                <button @click="openModal('curhat')" class="glass rounded-3xl p-6 text-center hover:scale-105 transition">
+                    <div class="text-4xl mb-2">💬</div>
+                    <div class="font-semibold">Kontak Curhat</div>
+                </button>
+
+                <button @click="openModal('jurnal')" class="glass rounded-3xl p-6 text-center hover:scale-105 transition">
+                    <div class="text-4xl mb-2">📔</div>
+                    <div class="font-semibold">Jurnal Harian</div>
+                </button>
+
+                <button @click="studentView='riwayat'" class="col-span-2 glass rounded-3xl p-6 text-center flex items-center justify-between hover:scale-[1.02] transition">
+                    <div class="text-left">
+                        <div class="font-semibold text-lg">Riwayat Curhatku</div>
+                        <div class="text-xs text-green-100">Lihat balasan dari wali</div>
+                    </div>
+                    <div class="text-4xl">📨</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- STUDENT RIWAYAT CURHAT -->
+        <div x-show="studentView==='riwayat'" class="min-h-screen p-6">
+            <button @click="studentView='dashboard'" class="mb-4 text-sm flex items-center gap-2"><- Kembali</button>
+            <h2 class="text-2xl font-bold mb-4">Riwayat Curhat</h2>
+            <div class="space-y-3">
+                <template x-for="c in curhats.filter(c => c.student_id === currentUser.id)" :key="c.id">
+                    <div class="glass rounded-2xl p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-green-100" x-text="new Date(c.created_at).toLocaleDateString()"></span>
+                            <span :class="c.balasan ? 'bg-green-500' : 'bg-yellow-400 text-green-900'" class="text-xs px-2 py-1 rounded-full font-semibold" x-text="c.balasan ? 'Dibalas' : 'Menunggu'"></span>
+                        </div>
+                        <p class="text-sm mb-2" x-text="'"' + c.cerita + '"'"></p>
+                        <div x-show="c.balasan" class="bg-black/20 p-3 rounded-xl mt-2">
+                            <p class="text-xs text-yellow-300 font-bold mb-1">Balasan Wali:</p>
+                            <p class="text-sm" x-text="c.balasan"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- MODAL PERBUATAN BAIK -->
+        <div x-show="activeModal==='perbuatanBaik'" x-transition class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="activeModal=null">
+            <div class="glass w-full max-w-md rounded-t-3xl p-6">
+                <h3 class="text-xl font-bold mb-4 text-center">Apa yang kamu lakukan?</h3>
+                <div class="space-y-2">
+                    <template x-for="act in ['Aku membantu teman', 'Aku berbagi makanan', 'Aku menjaga kebersihan', 'Aku berkata jujur', 'Lainnya']">
+                        <button @click="savePerbuatanBaik(act)" class="w-full bg-white/20 hover:bg-yellow-400 hover:text-green-900 transition py-3 rounded-xl font-semibold" x-text="act"></button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL JURNAL -->
+        <div x-show="activeModal==='jurnal'" x-transition class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="activeModal=null">
+            <div class="glass w-full max-w-md rounded-t-3xl p-6">
+                <h3 class="text-xl font-bold mb-4 text-center">Jurnal Hari Ini</h3>
+                <label class="text-sm text-green-100">Bagaimana perasaanmu?</label>
+                <div class="flex justify-around my-4 text-4xl">
+                    <template x-for="e in ['😊','😐','😢','😡','😴']">
+                        <button @click="jurnalForm.perasaan = e" :class="jurnalForm.perasaan===e ? 'scale-125 bg-white/20 rounded-full p-2' : ''" x-text="e"></button>
+                    </template>
+                </div>
+                <textarea x-model="jurnalForm.cerita" class="w-full bg-white/20 rounded-xl p-3 text-white placeholder-green-100" rows="3" placeholder="Ceritakan harimu..."></textarea>
+                <button @click="saveJurnal()" class="w-full bg-green-600 mt-4 py-3 rounded-xl font-bold">Simpan Jurnal</button>
+            </div>
+        </div>
+
+        <!-- MODAL CURHAT (Chat Flow) -->
+        <div x-show="activeModal==='curhat'" x-transition class="fixed inset-0 z-50 bg-black/80 flex flex-col p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Curhat Wali</h3>
+                <button @click="activeModal=null" class="text-red-400">Tutup</button>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-3 mb-4 scrollbar-hide">
+                <!-- Chat Bubble Dinamis -->
+                <template x-for="(msg, i) in curhatChat" :key="i">
+                    <div :class="msg.type === 'bot' ? 'text-left' : 'text-right'">
+                        <div :class="msg.type === 'bot' ? 'bg-white/20' : 'bg-yellow-400 text-green-900'" class="inline-block px-4 py-2 rounded-2xl max-w-[80%]" x-text="msg.text"></div>
+                    </div>
+                </template>
+                
+                <div x-show="curhatStep === 1" class="flex gap-2 justify-end">
+                    <button @click="answerCurhat('untuk', 'Aku sendiri')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Aku sendiri</button>
+                    <button @click="answerCurhat('untuk', 'Temanku')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Curhat teman</button>
+                </div>
+                <div x-show="curhatStep === 2" class="flex gap-2 justify-end">
+                    <button @click="answerCurhat('kategori', 'Rumah')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Rumah</button>
+                    <button @click="answerCurhat('kategori', 'Sekolah')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Sekolah</button>
+                </div>
+                <div x-show="curhatStep === 3 && curhatForm.kategori === 'Rumah'" class="flex flex-wrap gap-2 justify-end">
+                    <template x-for="s in ['Orang tua','Saudara','Keuangan','Lainnya']">
+                        <button @click="answerCurhat('sub', s)" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold" x-text="s"></button>
+                    </template>
+                </div>
+                <div x-show="curhatStep === 3 && curhatForm.kategori === 'Sekolah'" class="flex flex-wrap gap-2 justify-end">
+                    <template x-for="s in ['Perundungan','Pelajaran','Teman','Guru','Lainnya']">
+                        <button @click="answerCurhat('sub', s)" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold" x-text="s"></button>
+                    </template>
+                </div>
+                <div x-show="curhatStep === 4" class="flex gap-2 justify-end">
+                    <button @click="answerCurhat('darurat', 'Cerita')" class="bg-green-500 px-4 py-2 rounded-full text-sm font-semibold">Mau cerita</button>
+                    <button @click="answerCurhat('darurat', 'Saran')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Butuh saran</button>
+                    <button @click="answerCurhat('darurat', 'Bantuan')" class="bg-red-500 px-4 py-2 rounded-full text-sm font-semibold">Bantuan Sekarang!</button>
+                </div>
+                
+                <div x-show="curhatStep === 5" class="mt-4">
+                    <textarea x-model="curhatForm.cerita" class="w-full bg-white/20 rounded-xl p-3 text-white" rows="4" placeholder="Ceritakan masalahnya..."></textarea>
+                    <button @click="submitCurhat()" class="w-full bg-green-600 mt-2 py-3 rounded-xl font-bold">Kirim Curhat</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div x-show="isLoggedIn && role==='admin'" class="w-full max-w-4xl pb-24 p-4 md:p-8">
+        
+        <!-- HEADER -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <p class="text-green-100 text-sm">Dashboard Wali Kelas</p>
+                <h1 class="text-2xl md:text-3xl font-bold" x-text="currentUser.name"></h1>
+            </div>
+            <button @click="logout()" class="glass-dark px-4 py-2 rounded-xl text-sm">Keluar</button>
+        </div>
+
+        <!-- TABS -->
+        <div class="flex gap-2 mb-6 glass-dark p-1 rounded-full overflow-x-auto scrollbar-hide">
+            <button @click="adminView='siswa'" :class="adminView==='siswa' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Daftar Siswa</button>
+            <button @click="adminView='curhat'" :class="adminView==='curhat' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Inbox Curhat</button>
+            <button @click="adminView='laporan'" :class="adminView==='laporan' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Laporan</button>
+            <button @click="adminView='kelola'" :class="adminView==='kelola' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Kelola Siswa</button>
+        </div>
+
+        <!-- VIEW DAFTAR SISWA -->
+        <div x-show="adminView==='siswa'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <template x-for="s in students" :key="s.id">
+                <div class="glass rounded-2xl p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-yellow-400 text-green-900 flex items-center justify-center font-bold text-xl" x-text="s.name.charAt(0)"></div>
+                    <div class="flex-1">
+                        <h3 class="font-bold" x-text="s.name"></h3>
+                        <p class="text-xs text-green-100" x-text="s.nis + ' - ' + s.class"></p>
+                    </div>
+                    <div class="text-2xl" x-text="getStudentStatus(s.id)"></div>
+                </div>
+            </template>
+        </div>
+
+        <!-- VIEW CURHAT INBOX -->
+        <div x-show="adminView==='curhat'" class="space-y-4">
+            <template x-for="c in curhats" :key="c.id">
+                <div class="glass rounded-2xl p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-bold" x-text="getStudentName(c.student_id)"></h3>
+                            <p class="text-xs text-green-100" x-text="new Date(c.created_at).toLocaleString()"></p>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full font-semibold"
+                              :class="c.tingkat_darurat === 'Bantuan' ? 'bg-red-500' : (c.tingkat_darurat === 'Saran' ? 'bg-yellow-400 text-green-900' : 'bg-green-500')"
+                              x-text="c.tingkat_darurat"></span>
+                    </div>
+                    <div class="text-xs text-green-100 mb-2">Kategori: <span x-text="c.kategori + ' - ' + c.sub"></span></div>
+                    <p class="text-sm bg-black/20 p-3 rounded-xl mb-3" x-text="c.cerita"></p>
+                    
+                    <div x-show="!c.balasan">
+                        <textarea x-model="tempReply" class="w-full bg-white/20 rounded-xl p-2 text-sm mb-2" rows="2" placeholder="Tulis balasan..."></textarea>
+                        <button @click="replyCurhat(c.id)" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-lg text-sm font-bold">Kirim Balasan</button>
+                    </div>
+                    <div x-show="c.balasan" class="bg-green-500/30 p-3 rounded-xl">
+                        <p class="text-xs text-yellow-300 font-bold">Balasan Wali:</p>
+                        <p class="text-sm" x-text="c.balasan"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- VIEW LAPORAN -->
+        <div x-show="adminView==='laporan'" class="glass rounded-2xl p-4 overflow-x-auto">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-xl font-bold">Laporan Kondisi Siswa</h2>
+                <button @click="exportExcel()" class="bg-green-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">📥 Download Excel</button>
+            </div>
+            <table class="w-full text-sm min-w-[600px]">
+                <thead>
+                    <tr class="border-b border-white/20 text-left">
+                        <th class="p-2">Nama</th>
+                        <th class="p-2">Nilai</th>
+                        <th class="p-2">Sikap</th>
+                        <th class="p-2">Catatan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="s in students" :key="s.id">
+                        <tr class="border-b border-white/10">
+                            <td class="p-2" x-text="s.name"></td>
+                            <td class="p-2"><input type="number" x-model="s.nilai" class="w-16 bg-white/10 p-1 rounded"></td>
+                            <td class="p-2">
+                                <select x-model="s.sikap" class="bg-white/10 p-1 rounded">
+                                    <option class="text-black" value="Sangat Baik">Sangat Baik</option>
+                                    <option class="text-black" value="Baik">Baik</option>
+                                    <option class="text-black" value="Cukup">Cukup</option>
+                                    <option class="text-black" value="Kurang">Kurang</option>
+                                </select>
+                            </td>
+                            <td class="p-2"><input type="text" x-model="s.catatan" class="w-full bg-white/10 p-1 rounded"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- VIEW KELOLA SISWA -->
+        <div x-show="adminView==='kelola'" class="space-y-4">
+            <div class="glass rounded-2xl p-4">
+                <h3 class="font-bold mb-3">Tambah Siswa Baru</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <input type="text" x-model="newStudent.name" placeholder="Nama" class="bg-white/20 p-2 rounded-lg">
+                    <input type="text" x-model="newStudent.nis" placeholder="NIS" class="bg-white/20 p-2 rounded-lg">
+                    <input type="text" x-model="newStudent.class" placeholder="Kelas" class="bg-white/20 p-2 rounded-lg">
+                    <button @click="addStudent()" class="bg-yellow-400 text-green-900 font-bold rounded-lg">Tambah</button>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <template x-for="s in students" :key="s.id">
+                    <div class="glass rounded-xl p-3 flex justify-between items-center">
+                        <span x-text="s.name + ' (' + s.nis + ')'"></span>
+                        <div class="flex gap-2">
+                            <button @click="resetPass(s.id)" class="bg-yellow-400 text-green-900 text-xs px-3 py-1 rounded-lg">Reset PW</button>
+                            <button @click="deleteStudent(s.id)" class="bg-red-500 text-xs px-3 py-1 rounded-lg">Hapus</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function dWaliApp() {
+    return {
+        // STATE
+        isLoggedIn: false,
+        role: 'student',
+        loginRole: 'student',
+        loginForm: { name: 'Budi', class: '7A', pin: '51sw@qu', email: 'wali@dwali.com', pass: 'd4Rm@app*' },
+        currentUser: null,
+        
+        // VIEWS
+        studentView: 'dashboard',
+        adminView: 'siswa',
+        activeModal: null,
+        notif: { show: false, text: '' },
+
+        // DATA
+        students: [
+            { id: 's1', name: 'Budi', nis: '12345', class: '7A', is_potensi_filled: false, perbuatan_baik_today: false, nilai: 85, sikap: 'Baik', catatan: 'Aktif', potensi: {} },
+            { id: 's2', name: 'Siti', nis: '12346', class: '7A', is_potensi_filled: true, perbuatan_baik_today: true, nilai: 90, sikap: 'Sangat Baik', catatan: 'Rajin', potensi: {} }
+        ],
+        curhats: [
+            { id: 'c1', student_id: 's2', untuk: 'Aku sendiri', kategori: 'Sekolah', sub: 'Pelajaran', tingkat_darurat: 'Saran', cerita: 'Saya kesulitan matematika pak', is_read: false, balasan: 'Nanti saya bantu belajar sore ya.', created_at: new Date().toISOString() }
+        ],
+        
+        // FORMS
+        potensiForm: { minat: '', gaya: '', cita_cita: '', karakter: '', ekskul: '' },
+        jurnalForm: { perasaan: '', cerita: '' },
+        newStudent: { name: '', nis: '', class: '' },
+        tempReply: '',
+
+        // CURHAT FLOW
+        curhatStep: 0,
+        curhatChat: [],
+        curhatForm: { untuk: '', kategori: '', sub: '', darurat: '', cerita: '' },
+
+        // SYNC CONFIG
+        SHEET_URL: 'https://script.google.com/macros/s/AKfycbzMDDPXHqNwhiq8_4JKwHOo6wrUq_3c_DbMddMsp0FTtj3vEiJ94GCWF4c6166Pj2ZMRw/exec', // GANTI DENGAN URL KAMU
+        isSyncing: false,
+
+        // ============ INIT ============
+        init() {
+            this.loadFromSheet();
+        },
+
+        // ============ SYNC FUNCTIONS ============
+        async loadFromSheet() {
+            try {
+                this.showNotif('⏳ Loading data...');
+                
+                const studentResponse = await fetch(this.SHEET_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getStudents' })
+                });
+                
+                const studentData = await studentResponse.json();
+                if (studentData.status === 'success' && studentData.data.length > 0) {
+                    this.students = studentData.data;
+                }
+                
+                const curhatResponse = await fetch(this.SHEET_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getCurhats' })
+                });
+                
+                const curhatData = await curhatResponse.json();
+                if (curhatData.status === 'success') {
+                    this.curhats = curhatData.data || [];
+                }
+                
+                this.showNotif('✅ Data loaded from spreadsheet!');
+                
+            } catch(error) {
+                console.error('Load error:', error);
+                this.showNotif('⚠️ Gagal load data, pakai data lokal');
+            }
+        },
+
+        async syncStudentToSheet(student) {
+            try {
+                const response = await fetch(this.SHEET_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'saveStudent',
+                        student: student
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    console.log('Student synced:', student.name);
+                }
+            } catch(error) {
+                console.error('Sync error:', error);
+            }
+        },
+
+        async syncCurhatToSheet(curhat) {
+            try {
+                const response = await fetch(this.SHEET_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'saveCurhat',
+                        curhat: curhat
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    console.log('Curhat synced');
+                }
+            } catch(error) {
+                console.error('Sync error:', error);
+            }
+        },
+
+        async syncReplyToSheet(curhatId, balasan) {
+            try {
+                const response = await fetch(this.SHEET_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'replyCurhat',
+                        curhatId: curhatId,
+                        balasan: balasan
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    console.log('Reply synced');
+                }
+            } catch(error) {
+                console.error('Sync error:', error);
+            }
+        },
+
+        async syncAllStudents() {
+            for (let student of this.students) {
+                await this.syncStudentToSheet(student);
+            }
+            this.showNotif('✅ Semua data tersinkronisasi!');
+        },
+
+        // ============ AUTH ============
+        loginStudent() {
+            if(this.loginForm.pin === '51sw@qu') {
+                let student = this.students.find(s => 
+                    s.name.toLowerCase() === this.loginForm.name.toLowerCase() && 
+                    s.class.toLowerCase() === this.loginForm.class.toLowerCase()
+                );
+                if(!student) {
+                    student = { 
+                        id: 's'+Date.now(), 
+                        name: this.loginForm.name, 
+                        nis: 'NEW', 
+                        class: this.loginForm.class, 
+                        is_potensi_filled: false, 
+                        perbuatan_baik_today: false, 
+                        nilai: 0, 
+                        sikap: 'Baik', 
+                        catatan: '',
+                        potensi: {}
+                    };
+                    this.students.push(student);
+                    this.syncStudentToSheet(student);
+                }
+                this.currentUser = student;
+                this.isLoggedIn = true;
+                this.role = 'student';
+                this.studentView = student.is_potensi_filled ? 'dashboard' : 'potensi';
+            } else {
+                this.showNotif('PIN/Password salah!');
+            }
+        },
+
+        loginAdmin() {
+            if(this.loginForm.pass === 'd4Rm@app*') {
+                this.currentUser = { name: 'Pak Wali 7A' };
+                this.isLoggedIn = true;
+                this.role = 'admin';
+            } else {
+                this.showNotif('Password Wali salah!');
+            }
+        },
+
+        logout() {
+            this.isLoggedIn = false;
+            this.currentUser = null;
+        },
+
+        // ============ STUDENT FEATURES ============
+        savePotensi() {
+            this.currentUser.is_potensi_filled = true;
+            this.currentUser.potensi = this.potensiForm;
+            let idx = this.students.findIndex(s => s.id === this.currentUser.id);
+            this.students[idx] = this.currentUser;
+            this.studentView = 'dashboard';
+            this.syncStudentToSheet(this.currentUser);
+            this.showNotif('✅ Peta Potensi Tersimpan!');
+        },
+
+        savePerbuatanBaik(act) {
+            this.currentUser.perbuatan_baik_today = true;
+            let idx = this.students.findIndex(s => s.id === this.currentUser.id);
+            this.students[idx] = this.currentUser;
+            this.activeModal = null;
+            this.syncStudentToSheet(this.currentUser);
+            const praises = ["🌟 Good Job! Kamu hebat!", "💪 Luar biasa! Pertahankan ya!", "😇 Kamu anak baik!"];
+            this.showNotif(praises[Math.floor(Math.random() * praises.length)]);
+        },
+
+        saveJurnal() {
+            this.activeModal = null;
+            this.jurnalForm = { perasaan: '', cerita: '' };
+            this.showNotif('✅ Jurnal Harian Tersimpan!');
+        },
+
+        // ============ CURHAT ============
+        openModal(type) {
+            this.activeModal = type;
+            if(type === 'curhat') {
+                this.curhatStep = 1;
+                this.curhatChat = [{ type: 'bot', text: 'Siapakah kamu?' }];
+                this.curhatForm = { untuk: '', kategori: '', sub: '', darurat: '', cerita: '' };
+            }
+        },
+
+        answerCurhat(field, value) {
+            this.curhatForm[field] = value;
+            this.curhatChat.push({ type: 'user', text: value });
+            
+            if(field === 'untuk') { 
+                this.curhatStep = 2; 
+                this.curhatChat.push({ type: 'bot', text: 'Kategori, apakah ini masalah di rumah atau di sekolah?' }); 
+            } else if(field === 'kategori') { 
+                this.curhatStep = 3; 
+                this.curhatChat.push({ type: 'bot', text: `Masalah di ${value}?` }); 
+            } else if(field === 'sub') { 
+                this.curhatStep = 4; 
+                this.curhatChat.push({ type: 'bot', text: 'Tingkat Darurat?' }); 
+            } else if(field === 'darurat') {
+                this.curhatStep = 5;
+                let msg = 'Masalahnya apa? Ceritakan bebas ya.';
+                if(value === 'Bantuan') msg = '⚠️ Kami akan segera menghubungimu! Tetap tenang ya. Tapi ceritakan dulu apa yang terjadi.';
+                this.curhatChat.push({ type: 'bot', text: msg });
+            }
+        },
+
+        submitCurhat() {
+            const newCurhat = {
+                id: 'c'+Date.now(),
+                student_id: this.currentUser.id,
+                ...this.curhatForm,
+                tingkat_darurat: this.curhatForm.darurat,
+                is_read: false,
+                balasan: null,
+                created_at: new Date().toISOString()
+            };
+            
+            this.curhats.unshift(newCurhat);
+            this.syncCurhatToSheet(newCurhat);
+            this.activeModal = null;
+            this.showNotif('✅ Terima kasih sudah curhat, sabar ya menunggu balasan dari Wali.');
+        },
+
+        // ============ ADMIN FEATURES ============
+        getStudentStatus(id) {
+            let c = this.curhats.find(c => c.student_id === id && !c.balasan);
+            if(!c) return '🟢';
+            return c.tingkat_darurat === 'Bantuan' ? '🔴' : '🟡';
+        },
+
+        getStudentName(id) {
+            let s = this.students.find(s => s.id === id);
+            return s ? s.name : 'Unknown';
+        },
+
+        replyCurhat(id) {
+            let c = this.curhats.find(c => c.id === id);
+            if(c) {
+                c.balasan = this.tempReply;
+                this.syncReplyToSheet(id, this.tempReply);
+                this.tempReply = '';
+                this.showNotif('Balasan terkirim!');
+            }
+        },
+
+        addStudent() {
+            if(this.newStudent.name && this.newStudent.nis) {
+                const newStudent = {
+                    id: 's'+Date.now(),
+                    ...this.newStudent,
+                    is_potensi_filled: false,
+                    perbuatan_baik_today: false,
+                    nilai: 0,
+                    sikap: 'Baik',
+                    catatan: '',
+                    potensi: {}
+                };
+                
+                this.students.push(newStudent);
+                this.newStudent = { name: '', nis: '', class: '' };
+                this.syncStudentToSheet(newStudent);
+                this.showNotif('Siswa ditambahkan!');
+            }
+        },
+
+        resetPass(id) {
+            this.showNotif('Password siswa direset ke: 51sw@qu');
+        },
+
+        deleteStudent(id) {
+            this.students = this.students.filter(s => s.id !== id);
+            this.syncAllStudents();
+            this.showNotif('Siswa dihapus.');
+        },
+
+        // ============ EXPORT EXCEL ============
+        exportExcel() {
+            let data = this.students.map(s => {
+                let jurnalCount = this.curhats.filter(c => c.student_id === s.id).length;
+                return {
+                    'Nama': s.name,
+                    'NIS': s.nis,
+                    'Kelas': s.class,
+                    'Nilai Akademik': s.nilai,
+                    'Sikap': s.sikap,
+                    'Catatan Khusus': s.catatan,
+                    'Jumlah Curhat': jurnalCount
+                }
+            });
+            
+            let ws = XLSX.utils.json_to_sheet(data);
+            const colWidths = Object.keys(data[0]).map(key => ({ 
+                wch: Math.max(key.length, ...data.map(d => String(d[key]).length)) 
+            }));
+            ws['!cols'] = colWidths;
+
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan Siswa");
+            XLSX.writeFile(wb, "Laporan_DWali.xlsx");
+        },
+
+        // ============ HELPER ============
+        showNotif(text) {
+            this.notif.text = text;
+            this.notif.show = true;
+            setTimeout(() => { this.notif.show = false; }, 3000);
+        }
+    }
+}
+</script>
+</body>
+</html>
