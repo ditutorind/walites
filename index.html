@@ -1,799 +1,1077 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D'WALI - Digital Wali</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .glass-dark {
-            background: rgba(6, 78, 59, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        [x-cloak] { display: none !important; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wali Digital v8</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background: #e8f4f8; font-family: 'Segoe UI', Arial, sans-serif; }
+    .card { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.3); }
+    .btn-primary { background: #4a9bc7; color: white; padding: 10px 24px; border-radius: 12px; border: none; font-weight: 600; transition: all 0.3s; }
+    .btn-primary:hover { background: #3a8ab7; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(74,155,199,0.3); }
+    .btn-danger { background: #e8848a; color: white; padding: 10px 24px; border-radius: 12px; border: none; font-weight: 600; }
+    .btn-danger:hover { background: #d47076; }
+    .input { background: rgba(255,255,255,0.7); border: 2px solid rgba(74,155,199,0.2); border-radius: 12px; padding: 10px 16px; width: 100%; }
+    .input:focus { border-color: #4a9bc7; outline: none; box-shadow: 0 0 0 3px rgba(74,155,199,0.1); }
+    .hidden { display: none !important; }
+    .status-online { color: #4a9b7a; }
+    .status-offline { color: #e8848a; }
+  </style>
 </head>
-<body class="min-h-screen bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=2070&auto=format&fit=crop');">
+<body>
 
-<div x-data="dWaliApp()" x-init="init()" class="min-h-screen w-full flex justify-center text-white">
+<div id="app" class="max-w-lg mx-auto p-4" style="padding-bottom: 80px;">
 
-    <!-- NOTIFICATION TOAST -->
-    <div x-show="notif.show" x-transition class="fixed top-4 left-1/2 -translate-x-1/2 z-50 glass-dark px-6 py-3 rounded-xl shadow-lg">
-        <span x-text="notif.text"></span>
+  <!-- ===== CONNECTION STATUS ===== -->
+  <div id="connectionStatus" class="text-right text-sm mb-2">
+    <span id="statusText"><i class="fas fa-wifi"></i> Online</span>
+  </div>
+
+  <!-- ===== LOGIN ===== -->
+  <div id="loginPage" class="card p-8 mt-4">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-blue-600">🏫 Wali Digital</h1>
+      <p class="text-gray-500 text-sm">Sistem Manajemen Siswa</p>
     </div>
 
-    <!-- LOGIN VIEW -->
-    <div x-show="!isLoggedIn" class="w-full max-w-md p-6 flex flex-col justify-center min-h-screen">
-        <div class="glass rounded-3xl p-8 text-center shadow-2xl">
-            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=300&auto=format&fit=crop" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-white/50" alt="Logo">
-            <h1 class="text-3xl font-extrabold text-yellow-300 tracking-wide">D'WALI</h1>
-            <p class="text-green-100 text-sm mb-6">Digital Wali Murid</p>
-            
-            <div class="flex gap-2 mb-6 bg-black/20 p-1 rounded-full">
-                <button @click="loginRole='student'" :class="loginRole==='student' ? 'bg-yellow-400 text-green-900' : 'text-white'" class="flex-1 py-2 rounded-full font-semibold transition">Siswa</button>
-                <button @click="loginRole='admin'" :class="loginRole==='admin' ? 'bg-yellow-400 text-green-900' : 'text-white'" class="flex-1 py-2 rounded-full font-semibold transition">Wali Kelas</button>
-            </div>
-
-            <!-- Student Login -->
-            <div x-show="loginRole==='student'" class="space-y-3">
-                <input type="text" x-model="loginForm.name" placeholder="Nama Siswa" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
-                <input type="text" x-model="loginForm.class" placeholder="Kelas (Misal: 7A)" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
-                <input type="password" x-model="loginForm.pin" placeholder="PIN / Password" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
-                <button @click="loginStudent()" class="w-full bg-yellow-400 text-green-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition">Masuk</button>
-            </div>
-
-            <!-- Admin Login -->
-            <div x-show="loginRole==='admin'" class="space-y-3">
-                <input type="email" x-model="loginForm.email" placeholder="Email Wali" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
-                <input type="password" x-model="loginForm.pass" placeholder="Password" class="w-full px-4 py-3 rounded-xl bg-white/20 placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-yellow-300">
-                <button @click="loginAdmin()" class="w-full bg-yellow-400 text-green-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition">Masuk</button>
-            </div>
-        </div>
+    <!-- Role Selector -->
+    <div class="flex gap-2 mb-4">
+      <button id="roleStudent" class="flex-1 py-2 px-4 rounded-lg font-semibold bg-blue-500 text-white" onclick="setRole('student')">
+        <i class="fas fa-user-graduate"></i> Siswa
+      </button>
+      <button id="roleWali" class="flex-1 py-2 px-4 rounded-lg font-semibold bg-gray-200 text-gray-600" onclick="setRole('wali')">
+        <i class="fas fa-chalkboard-teacher"></i> Wali
+      </button>
+      <button id="roleAdmin" class="flex-1 py-2 px-4 rounded-lg font-semibold bg-gray-200 text-gray-600" onclick="setRole('admin')">
+        <i class="fas fa-user-shield"></i> Admin
+      </button>
     </div>
 
-    <!-- STUDENT VIEW -->
-    <div x-show="isLoggedIn && role==='student'" class="w-full max-w-md pb-24 relative">
-        
-        <!-- MODAL PETA POTENSI -->
-        <div x-show="studentView==='potensi'" class="absolute inset-0 z-40 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-            <div class="glass rounded-3xl p-6 w-full my-10">
-                <h2 class="text-2xl font-bold text-yellow-300 mb-2">Peta Potensi Siswa</h2>
-                <p class="text-sm text-green-100 mb-4">Lengkapi data diri ini sekali saja.</p>
-                
-                <div class="space-y-4 text-sm">
-                    <div>
-                        <label class="font-semibold block mb-2">Minat (Pilih satu)</label>
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="m in ['Olahraga','Seni','Sains','Teknologi','Bahasa','Lainnya']">
-                                <button @click="potensiForm.minat = m" :class="potensiForm.minat===m ? 'bg-yellow-400 text-green-900' : 'bg-white/20'" class="px-3 py-1 rounded-full text-xs" x-text="m"></button>
-                            </template>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="font-semibold block mb-2">Gaya Belajar</label>
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="g in ['Visual','Auditori','Kinestetik','Baca/Tulis']">
-                                <button @click="potensiForm.gaya = g" :class="potensiForm.gaya===g ? 'bg-yellow-400 text-green-900' : 'bg-white/20'" class="px-3 py-1 rounded-full text-xs" x-text="g"></button>
-                            </template>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="font-semibold block mb-2">Cita-cita</label>
-                        <textarea x-model="potensiForm.cita_cita" class="w-full bg-white/20 rounded-xl p-3 text-white placeholder-green-100" rows="2" placeholder="Saya ingin menjadi..."></textarea>
-                    </div>
-                    <div>
-                        <label class="font-semibold block mb-2">Kekuatan Karakter</label>
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="k in ['Pemberani','Baik Hati','Kreatif','Pantang Menyerah','Disiplin','Pemimpin','Jujur']">
-                                <button @click="potensiForm.karakter = k" :class="potensiForm.karakter===k ? 'bg-yellow-400 text-green-900' : 'bg-white/20'" class="px-3 py-1 rounded-full text-xs" x-text="k"></button>
-                            </template>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="font-semibold block mb-2">Ekstrakurikuler</label>
-                        <input type="text" x-model="potensiForm.ekskul" class="w-full bg-white/20 rounded-xl p-3 text-white placeholder-green-100" placeholder="Pramuka, Futsal, dll">
-                    </div>
-                </div>
-                <button @click="savePotensi()" class="w-full bg-green-600 mt-6 py-3 rounded-xl font-bold hover:bg-green-500">Simpan & Lanjut</button>
-            </div>
-        </div>
-
-        <!-- STUDENT DASHBOARD -->
-        <div x-show="studentView==='dashboard'" class="min-h-screen p-6">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <p class="text-green-100 text-sm">Selamat datang,</p>
-                    <h1 class="text-2xl font-bold" x-text="currentUser.name"></h1>
-                </div>
-                <button @click="logout()" class="glass-dark p-2 rounded-full text-xs">Keluar</button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Perbuatan Baik -->
-                <div class="col-span-2 glass rounded-3xl p-6 text-center">
-                    <h3 class="font-bold text-lg mb-3">Perbuatan Baik Hari Ini</h3>
-                    <template x-if="!currentUser.perbuatan_baik_today">
-                        <button @click="openModal('perbuatanBaik')" class="bg-yellow-400 text-green-900 text-5xl w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-lg">⭐</button>
-                    </template>
-                    <template x-if="currentUser.perbuatan_baik_today">
-                        <div class="text-green-300 font-bold py-4">✔️ Sudah Berbuat Baik Hari Ini!</div>
-                    </template>
-                </div>
-
-                <button @click="openModal('curhat')" class="glass rounded-3xl p-6 text-center hover:scale-105 transition">
-                    <div class="text-4xl mb-2">💬</div>
-                    <div class="font-semibold">Kontak Curhat</div>
-                </button>
-
-                <button @click="openModal('jurnal')" class="glass rounded-3xl p-6 text-center hover:scale-105 transition">
-                    <div class="text-4xl mb-2">📔</div>
-                    <div class="font-semibold">Jurnal Harian</div>
-                </button>
-
-                <button @click="studentView='riwayat'" class="col-span-2 glass rounded-3xl p-6 text-center flex items-center justify-between hover:scale-[1.02] transition">
-                    <div class="text-left">
-                        <div class="font-semibold text-lg">Riwayat Curhatku</div>
-                        <div class="text-xs text-green-100">Lihat balasan dari wali</div>
-                    </div>
-                    <div class="text-4xl">📨</div>
-                </button>
-            </div>
-        </div>
-
-        <!-- STUDENT RIWAYAT CURHAT -->
-        <div x-show="studentView==='riwayat'" class="min-h-screen p-6">
-            <button @click="studentView='dashboard'" class="mb-4 text-sm flex items-center gap-2"><- Kembali</button>
-            <h2 class="text-2xl font-bold mb-4">Riwayat Curhat</h2>
-            <div class="space-y-3">
-                <template x-for="c in curhats.filter(c => c.student_id === currentUser.id)" :key="c.id">
-                    <div class="glass rounded-2xl p-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-green-100" x-text="new Date(c.created_at).toLocaleDateString()"></span>
-                            <span :class="c.balasan ? 'bg-green-500' : 'bg-yellow-400 text-green-900'" class="text-xs px-2 py-1 rounded-full font-semibold" x-text="c.balasan ? 'Dibalas' : 'Menunggu'"></span>
-                        </div>
-                        <p class="text-sm mb-2" x-text="'"' + c.cerita + '"'"></p>
-                        <div x-show="c.balasan" class="bg-black/20 p-3 rounded-xl mt-2">
-                            <p class="text-xs text-yellow-300 font-bold mb-1">Balasan Wali:</p>
-                            <p class="text-sm" x-text="c.balasan"></p>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <!-- MODAL PERBUATAN BAIK -->
-        <div x-show="activeModal==='perbuatanBaik'" x-transition class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="activeModal=null">
-            <div class="glass w-full max-w-md rounded-t-3xl p-6">
-                <h3 class="text-xl font-bold mb-4 text-center">Apa yang kamu lakukan?</h3>
-                <div class="space-y-2">
-                    <template x-for="act in ['Aku membantu teman', 'Aku berbagi makanan', 'Aku menjaga kebersihan', 'Aku berkata jujur', 'Lainnya']">
-                        <button @click="savePerbuatanBaik(act)" class="w-full bg-white/20 hover:bg-yellow-400 hover:text-green-900 transition py-3 rounded-xl font-semibold" x-text="act"></button>
-                    </template>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL JURNAL -->
-        <div x-show="activeModal==='jurnal'" x-transition class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="activeModal=null">
-            <div class="glass w-full max-w-md rounded-t-3xl p-6">
-                <h3 class="text-xl font-bold mb-4 text-center">Jurnal Hari Ini</h3>
-                <label class="text-sm text-green-100">Bagaimana perasaanmu?</label>
-                <div class="flex justify-around my-4 text-4xl">
-                    <template x-for="e in ['😊','😐','😢','😡','😴']">
-                        <button @click="jurnalForm.perasaan = e" :class="jurnalForm.perasaan===e ? 'scale-125 bg-white/20 rounded-full p-2' : ''" x-text="e"></button>
-                    </template>
-                </div>
-                <textarea x-model="jurnalForm.cerita" class="w-full bg-white/20 rounded-xl p-3 text-white placeholder-green-100" rows="3" placeholder="Ceritakan harimu..."></textarea>
-                <button @click="saveJurnal()" class="w-full bg-green-600 mt-4 py-3 rounded-xl font-bold">Simpan Jurnal</button>
-            </div>
-        </div>
-
-        <!-- MODAL CURHAT (Chat Flow) -->
-        <div x-show="activeModal==='curhat'" x-transition class="fixed inset-0 z-50 bg-black/80 flex flex-col p-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Curhat Wali</h3>
-                <button @click="activeModal=null" class="text-red-400">Tutup</button>
-            </div>
-            <div class="flex-1 overflow-y-auto space-y-3 mb-4 scrollbar-hide">
-                <!-- Chat Bubble Dinamis -->
-                <template x-for="(msg, i) in curhatChat" :key="i">
-                    <div :class="msg.type === 'bot' ? 'text-left' : 'text-right'">
-                        <div :class="msg.type === 'bot' ? 'bg-white/20' : 'bg-yellow-400 text-green-900'" class="inline-block px-4 py-2 rounded-2xl max-w-[80%]" x-text="msg.text"></div>
-                    </div>
-                </template>
-                
-                <div x-show="curhatStep === 1" class="flex gap-2 justify-end">
-                    <button @click="answerCurhat('untuk', 'Aku sendiri')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Aku sendiri</button>
-                    <button @click="answerCurhat('untuk', 'Temanku')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Curhat teman</button>
-                </div>
-                <div x-show="curhatStep === 2" class="flex gap-2 justify-end">
-                    <button @click="answerCurhat('kategori', 'Rumah')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Rumah</button>
-                    <button @click="answerCurhat('kategori', 'Sekolah')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Sekolah</button>
-                </div>
-                <div x-show="curhatStep === 3 && curhatForm.kategori === 'Rumah'" class="flex flex-wrap gap-2 justify-end">
-                    <template x-for="s in ['Orang tua','Saudara','Keuangan','Lainnya']">
-                        <button @click="answerCurhat('sub', s)" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold" x-text="s"></button>
-                    </template>
-                </div>
-                <div x-show="curhatStep === 3 && curhatForm.kategori === 'Sekolah'" class="flex flex-wrap gap-2 justify-end">
-                    <template x-for="s in ['Perundungan','Pelajaran','Teman','Guru','Lainnya']">
-                        <button @click="answerCurhat('sub', s)" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold" x-text="s"></button>
-                    </template>
-                </div>
-                <div x-show="curhatStep === 4" class="flex gap-2 justify-end">
-                    <button @click="answerCurhat('darurat', 'Cerita')" class="bg-green-500 px-4 py-2 rounded-full text-sm font-semibold">Mau cerita</button>
-                    <button @click="answerCurhat('darurat', 'Saran')" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold">Butuh saran</button>
-                    <button @click="answerCurhat('darurat', 'Bantuan')" class="bg-red-500 px-4 py-2 rounded-full text-sm font-semibold">Bantuan Sekarang!</button>
-                </div>
-                
-                <div x-show="curhatStep === 5" class="mt-4">
-                    <textarea x-model="curhatForm.cerita" class="w-full bg-white/20 rounded-xl p-3 text-white" rows="4" placeholder="Ceritakan masalahnya..."></textarea>
-                    <button @click="submitCurhat()" class="w-full bg-green-600 mt-2 py-3 rounded-xl font-bold">Kirim Curhat</button>
-                </div>
-            </div>
-        </div>
-
+    <!-- Student Login -->
+    <div id="studentLogin" class="space-y-3">
+      <input id="studentName" class="input" placeholder="Nama Lengkap" />
+      <input id="studentClass" class="input" placeholder="Kelas (contoh: 7A)" />
+      <input id="studentPassword" class="input" type="password" placeholder="PIN (default: 51sw@qu)" />
+      <button onclick="loginStudent()" class="btn-primary w-full"><i class="fas fa-sign-in-alt mr-2"></i> Masuk</button>
     </div>
 
-    <!-- ADMIN VIEW -->
-    <div x-show="isLoggedIn && role==='admin'" class="w-full max-w-4xl pb-24 p-4 md:p-8">
-        
-        <!-- HEADER -->
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <p class="text-green-100 text-sm">Dashboard Wali Kelas</p>
-                <h1 class="text-2xl md:text-3xl font-bold" x-text="currentUser.name"></h1>
-            </div>
-            <button @click="logout()" class="glass-dark px-4 py-2 rounded-xl text-sm">Keluar</button>
-        </div>
-
-        <!-- TABS -->
-        <div class="flex gap-2 mb-6 glass-dark p-1 rounded-full overflow-x-auto scrollbar-hide">
-            <button @click="adminView='siswa'" :class="adminView==='siswa' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Daftar Siswa</button>
-            <button @click="adminView='curhat'" :class="adminView==='curhat' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Inbox Curhat</button>
-            <button @click="adminView='laporan'" :class="adminView==='laporan' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Laporan</button>
-            <button @click="adminView='kelola'" :class="adminView==='kelola' ? 'bg-yellow-400 text-green-900' : ''" class="flex-1 whitespace-nowrap py-2 px-4 rounded-full font-semibold text-sm">Kelola Siswa</button>
-        </div>
-
-        <!-- VIEW DAFTAR SISWA -->
-        <div x-show="adminView==='siswa'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <template x-for="s in students" :key="s.id">
-                <div class="glass rounded-2xl p-4 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-yellow-400 text-green-900 flex items-center justify-center font-bold text-xl" x-text="s.name.charAt(0)"></div>
-                    <div class="flex-1">
-                        <h3 class="font-bold" x-text="s.name"></h3>
-                        <p class="text-xs text-green-100" x-text="s.nis + ' - ' + s.class"></p>
-                    </div>
-                    <div class="text-2xl" x-text="getStudentStatus(s.id)"></div>
-                </div>
-            </template>
-        </div>
-
-        <!-- VIEW CURHAT INBOX -->
-        <div x-show="adminView==='curhat'" class="space-y-4">
-            <template x-for="c in curhats" :key="c.id">
-                <div class="glass rounded-2xl p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h3 class="font-bold" x-text="getStudentName(c.student_id)"></h3>
-                            <p class="text-xs text-green-100" x-text="new Date(c.created_at).toLocaleString()"></p>
-                        </div>
-                        <span class="text-xs px-2 py-1 rounded-full font-semibold"
-                              :class="c.tingkat_darurat === 'Bantuan' ? 'bg-red-500' : (c.tingkat_darurat === 'Saran' ? 'bg-yellow-400 text-green-900' : 'bg-green-500')"
-                              x-text="c.tingkat_darurat"></span>
-                    </div>
-                    <div class="text-xs text-green-100 mb-2">Kategori: <span x-text="c.kategori + ' - ' + c.sub"></span></div>
-                    <p class="text-sm bg-black/20 p-3 rounded-xl mb-3" x-text="c.cerita"></p>
-                    
-                    <div x-show="!c.balasan">
-                        <textarea x-model="tempReply" class="w-full bg-white/20 rounded-xl p-2 text-sm mb-2" rows="2" placeholder="Tulis balasan..."></textarea>
-                        <button @click="replyCurhat(c.id)" class="bg-yellow-400 text-green-900 px-4 py-2 rounded-lg text-sm font-bold">Kirim Balasan</button>
-                    </div>
-                    <div x-show="c.balasan" class="bg-green-500/30 p-3 rounded-xl">
-                        <p class="text-xs text-yellow-300 font-bold">Balasan Wali:</p>
-                        <p class="text-sm" x-text="c.balasan"></p>
-                    </div>
-                </div>
-            </template>
-        </div>
-
-        <!-- VIEW LAPORAN -->
-        <div x-show="adminView==='laporan'" class="glass rounded-2xl p-4 overflow-x-auto">
-            <div class="flex justify-between mb-4">
-                <h2 class="text-xl font-bold">Laporan Kondisi Siswa</h2>
-                <button @click="exportExcel()" class="bg-green-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">📥 Download Excel</button>
-            </div>
-            <table class="w-full text-sm min-w-[600px]">
-                <thead>
-                    <tr class="border-b border-white/20 text-left">
-                        <th class="p-2">Nama</th>
-                        <th class="p-2">Nilai</th>
-                        <th class="p-2">Sikap</th>
-                        <th class="p-2">Catatan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="s in students" :key="s.id">
-                        <tr class="border-b border-white/10">
-                            <td class="p-2" x-text="s.name"></td>
-                            <td class="p-2"><input type="number" x-model="s.nilai" class="w-16 bg-white/10 p-1 rounded"></td>
-                            <td class="p-2">
-                                <select x-model="s.sikap" class="bg-white/10 p-1 rounded">
-                                    <option class="text-black" value="Sangat Baik">Sangat Baik</option>
-                                    <option class="text-black" value="Baik">Baik</option>
-                                    <option class="text-black" value="Cukup">Cukup</option>
-                                    <option class="text-black" value="Kurang">Kurang</option>
-                                </select>
-                            </td>
-                            <td class="p-2"><input type="text" x-model="s.catatan" class="w-full bg-white/10 p-1 rounded"></td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- VIEW KELOLA SISWA -->
-        <div x-show="adminView==='kelola'" class="space-y-4">
-            <div class="glass rounded-2xl p-4">
-                <h3 class="font-bold mb-3">Tambah Siswa Baru</h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <input type="text" x-model="newStudent.name" placeholder="Nama" class="bg-white/20 p-2 rounded-lg">
-                    <input type="text" x-model="newStudent.nis" placeholder="NIS" class="bg-white/20 p-2 rounded-lg">
-                    <input type="text" x-model="newStudent.class" placeholder="Kelas" class="bg-white/20 p-2 rounded-lg">
-                    <button @click="addStudent()" class="bg-yellow-400 text-green-900 font-bold rounded-lg">Tambah</button>
-                </div>
-            </div>
-            <div class="space-y-2">
-                <template x-for="s in students" :key="s.id">
-                    <div class="glass rounded-xl p-3 flex justify-between items-center">
-                        <span x-text="s.name + ' (' + s.nis + ')'"></span>
-                        <div class="flex gap-2">
-                            <button @click="resetPass(s.id)" class="bg-yellow-400 text-green-900 text-xs px-3 py-1 rounded-lg">Reset PW</button>
-                            <button @click="deleteStudent(s.id)" class="bg-red-500 text-xs px-3 py-1 rounded-lg">Hapus</button>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
+    <!-- Wali Login -->
+    <div id="waliLogin" class="space-y-3 hidden">
+      <input id="waliEmail" class="input" placeholder="Email Wali" />
+      <input id="waliPassword" class="input" type="password" placeholder="Password (default: d4Rm@app)" />
+      <button onclick="loginWali()" class="btn-primary w-full"><i class="fas fa-sign-in-alt mr-2"></i> Masuk</button>
     </div>
+
+    <!-- Admin Login -->
+    <div id="adminLogin" class="space-y-3 hidden">
+      <input id="adminEmail" class="input" placeholder="Email Admin" />
+      <input id="adminPassword" class="input" type="password" placeholder="Password (default: d4Rm@app)" />
+      <button onclick="loginAdmin()" class="btn-primary w-full"><i class="fas fa-sign-in-alt mr-2"></i> Masuk</button>
+    </div>
+
+    <div id="loginError" class="text-red-500 text-sm mt-3 hidden"></div>
+  </div>
+
+  <!-- ===== DASHBOARD SISWA ===== -->
+  <div id="studentDashboard" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h2 class="text-xl font-bold">Halo, <span id="studentNameDisplay" class="text-blue-600">Siswa</span> 👋</h2>
+        <p class="text-sm text-gray-500" id="dateDisplay"></p>
+      </div>
+      <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openCurhat()">
+        <i class="fas fa-comment-dots text-3xl text-purple-500"></i>
+        <div class="font-semibold text-sm mt-1">Curhat</div>
+      </div>
+      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openJurnal()">
+        <i class="fas fa-book-open text-3xl text-blue-500"></i>
+        <div class="font-semibold text-sm mt-1">Jurnal</div>
+      </div>
+      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openPerbuatanBaik()">
+        <i class="fas fa-star text-3xl text-yellow-500"></i>
+        <div class="font-semibold text-sm mt-1">Perbuatan Baik</div>
+      </div>
+      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openPotensi()">
+        <i class="fas fa-compass text-3xl text-green-500"></i>
+        <div class="font-semibold text-sm mt-1">Peta Potensi</div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card p-4">
+      <h3 class="font-bold mb-2"><i class="fas fa-bolt text-yellow-500 mr-2"></i>Aktivitas Terakhir</h3>
+      <div id="recentActivity" class="text-sm text-gray-500">Belum ada aktivitas</div>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD WALI ===== -->
+  <div id="waliDashboard" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h2 class="text-xl font-bold">👨‍🏫 <span id="waliNameDisplay" class="text-blue-600">Wali</span></h2>
+        <p class="text-sm text-gray-500">Dashboard Wali Kelas</p>
+      </div>
+      <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-2 mb-4">
+      <div class="card p-3 text-center">
+        <div class="text-2xl font-bold text-blue-600" id="totalSiswa">0</div>
+        <div class="text-xs text-gray-500">Siswa</div>
+      </div>
+      <div class="card p-3 text-center">
+        <div class="text-2xl font-bold text-red-500" id="curhatBelumDibaca">0</div>
+        <div class="text-xs text-gray-500">Belum Dibaca</div>
+      </div>
+      <div class="card p-3 text-center">
+        <div class="text-2xl font-bold text-yellow-500" id="curhatDarurat">0</div>
+        <div class="text-xs text-gray-500">Darurat</div>
+      </div>
+    </div>
+
+    <!-- Student List -->
+    <div class="card p-4">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold"><i class="fas fa-users mr-2"></i>Daftar Siswa</h3>
+        <button onclick="showTambahSiswa()" class="btn-primary text-sm py-1 px-3"><i class="fas fa-plus mr-1"></i>Tambah</button>
+      </div>
+      <div id="studentList" class="space-y-2"></div>
+    </div>
+
+    <!-- Curhat Inbox -->
+    <div class="card p-4 mt-4">
+      <h3 class="font-bold mb-3"><i class="fas fa-inbox mr-2"></i>Curhat Masuk</h3>
+      <div id="curhatInbox" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD ADMIN ===== -->
+  <div id="adminDashboard" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h2 class="text-xl font-bold">🛡️ <span id="adminNameDisplay" class="text-purple-600">Admin</span></h2>
+        <p class="text-sm text-gray-500">Dashboard Super Admin</p>
+      </div>
+      <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-2 mb-4">
+      <div class="card p-3 text-center">
+        <div class="text-2xl font-bold text-blue-600" id="totalWaliAdmin">0</div>
+        <div class="text-xs text-gray-500">Wali</div>
+      </div>
+      <div class="card p-3 text-center">
+        <div class="text-2xl font-bold text-purple-600" id="totalSiswaAdmin">0</div>
+        <div class="text-xs text-gray-500">Siswa</div>
+      </div>
+      <div class="card p-3 text-center">
+        <div class="text-2xl font-bold text-green-600" id="totalCurhatAdmin">0</div>
+        <div class="text-xs text-gray-500">Curhat</div>
+      </div>
+    </div>
+
+    <!-- Wali List -->
+    <div class="card p-4">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold"><i class="fas fa-chalkboard-teacher mr-2"></i>Wali Kelas</h3>
+        <button onclick="showTambahWali()" class="btn-primary text-sm py-1 px-3"><i class="fas fa-plus mr-1"></i>Tambah</button>
+      </div>
+      <div id="waliList" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- ===== MODALS ===== -->
+  
+  <!-- Curhat Modal -->
+  <div id="curhatModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('curhatModal')">
+    <div class="card p-6 max-w-sm w-full max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="fas fa-comment-dots text-purple-500 mr-2"></i>Curhat</h3>
+        <button onclick="closeModal('curhatModal')" class="text-gray-500 hover:text-red-500">✕</button>
+      </div>
+      <div id="curhatFlow" class="space-y-2"></div>
+      <div id="curhatOptions" class="flex flex-wrap gap-2 mt-3"></div>
+      <div id="curhatTextArea" class="hidden mt-3">
+        <textarea id="curhatCerita" class="input" rows="3" placeholder="Ceritakan masalahmu..."></textarea>
+        <button onclick="submitCurhat()" class="btn-primary w-full mt-2"><i class="fas fa-paper-plane mr-2"></i>Kirim</button>
+      </div>
+      <div id="curhatResult" class="hidden text-green-600 font-semibold mt-3">✅ Terima kasih sudah curhat!</div>
+    </div>
+  </div>
+
+  <!-- Jurnal Modal -->
+  <div id="jurnalModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('jurnalModal')">
+    <div class="card p-6 max-w-sm w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="fas fa-book-open text-blue-500 mr-2"></i>Jurnal Harian</h3>
+        <button onclick="closeModal('jurnalModal')" class="text-gray-500 hover:text-red-500">✕</button>
+      </div>
+      <div class="text-center text-3xl mb-3">
+        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😊')">😊</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😐')">😐</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😢')">😢</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😡')">😡</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😴')">😴</span>
+      </div>
+      <input id="jurnalEmoji" type="hidden" value="😊">
+      <textarea id="jurnalCerita" class="input" rows="3" placeholder="Ceritakan harimu..."></textarea>
+      <button onclick="simpanJurnal()" class="btn-primary w-full mt-3"><i class="fas fa-save mr-2"></i>Simpan</button>
+      <div id="jurnalFeedback" class="text-green-600 text-sm mt-2"></div>
+    </div>
+  </div>
+
+  <!-- Perbuatan Baik Modal -->
+  <div id="perbuatanModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('perbuatanModal')">
+    <div class="card p-6 max-w-sm w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="fas fa-star text-yellow-500 mr-2"></i>Perbuatan Baik</h3>
+        <button onclick="closeModal('perbuatanModal')" class="text-gray-500 hover:text-red-500">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="catatPerbuatan('Membantu teman')" class="p-2 bg-gray-100 rounded-lg hover:bg-blue-100">🤝 Membantu teman</button>
+        <button onclick="catatPerbuatan('Berbagi makanan')" class="p-2 bg-gray-100 rounded-lg hover:bg-blue-100">🍱 Berbagi makanan</button>
+        <button onclick="catatPerbuatan('Menjaga kebersihan')" class="p-2 bg-gray-100 rounded-lg hover:bg-blue-100">🧹 Menjaga kebersihan</button>
+        <button onclick="catatPerbuatan('Berkata jujur')" class="p-2 bg-gray-100 rounded-lg hover:bg-blue-100">💬 Berkata jujur</button>
+      </div>
+      <div class="mt-3">
+        <input id="perbuatanLain" class="input" placeholder="Lainnya...">
+        <button onclick="catatPerbuatan(document.getElementById('perbuatanLain').value)" class="btn-primary w-full mt-2">Catat</button>
+      </div>
+      <div id="perbuatanFeedback" class="text-green-600 text-sm mt-2"></div>
+    </div>
+  </div>
+
+  <!-- Potensi Modal -->
+  <div id="potensiModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('potensiModal')">
+    <div class="card p-6 max-w-sm w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="fas fa-compass text-green-500 mr-2"></i>Peta Potensi</h3>
+        <button onclick="closeModal('potensiModal')" class="text-gray-500 hover:text-red-500">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-sm font-semibold">Minat</label>
+          <select id="potensiMinat" class="input">
+            <option>Olahraga</option><option>Seni</option><option>Sains</option><option>Teknologi</option><option>Bahasa</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Gaya Belajar</label>
+          <select id="potensiGaya" class="input">
+            <option>Visual</option><option>Auditori</option><option>Kinestetik</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Cita-cita</label>
+          <input id="potensiCita" class="input" placeholder="Cita-citamu">
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Kekuatan Karakter</label>
+          <select id="potensiKarakter" class="input">
+            <option>Pemberani</option><option>Baik Hati</option><option>Kreatif</option><option>Pantang Menyerah</option><option>Disiplin</option>
+          </select>
+        </div>
+        <button onclick="simpanPotensi()" class="btn-primary w-full"><i class="fas fa-save mr-2"></i>Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tambah Siswa Modal -->
+  <div id="tambahSiswaModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('tambahSiswaModal')">
+    <div class="card p-6 max-w-sm w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="fas fa-user-plus text-green-500 mr-2"></i>Tambah Siswa</h3>
+        <button onclick="closeModal('tambahSiswaModal')" class="text-gray-500 hover:text-red-500">✕</button>
+      </div>
+      <div class="space-y-3">
+        <input id="siswaNIS" class="input" placeholder="NIS">
+        <input id="siswaNama" class="input" placeholder="Nama Lengkap">
+        <input id="siswaKelas" class="input" placeholder="Kelas">
+        <input id="siswaPIN" class="input" placeholder="PIN (default: 51sw@qu)" value="51sw@qu">
+        <button onclick="tambahSiswa()" class="btn-primary w-full"><i class="fas fa-save mr-2"></i>Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tambah Wali Modal -->
+  <div id="tambahWaliModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('tambahWaliModal')">
+    <div class="card p-6 max-w-sm w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="fas fa-user-plus text-purple-500 mr-2"></i>Tambah Wali</h3>
+        <button onclick="closeModal('tambahWaliModal')" class="text-gray-500 hover:text-red-500">✕</button>
+      </div>
+      <div class="space-y-3">
+        <input id="waliNama" class="input" placeholder="Nama Wali">
+        <input id="waliEmail" class="input" placeholder="Email Wali">
+        <input id="waliKelas" class="input" placeholder="Kelas">
+        <input id="waliPassword" class="input" placeholder="Password (default: d4Rm@app)" value="d4Rm@app">
+        <button onclick="tambahWali()" class="btn-primary w-full"><i class="fas fa-save mr-2"></i>Simpan</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
 <script>
-function dWaliApp() {
-    return {
-        // STATE
-        isLoggedIn: false,
-        role: 'student',
-        loginRole: 'student',
-        loginForm: { name: 'Budi', class: '7A', pin: '51sw@qu', email: 'wali@dwali.com', pass: 'd4Rm@app*' },
-        currentUser: null,
-        
-        // VIEWS
-        studentView: 'dashboard',
-        adminView: 'siswa',
-        activeModal: null,
-        notif: { show: false, text: '' },
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const CONFIG = {
+  // 🔥 GANTI DENGAN URL WEB APP ANDA
+  API_URL: 'https://script.google.com/macros/s/AKfycbwbqvRIvpHaQ9pmrHMUFxS5Xu_bfW8mIG2t7evUBIu7pqQy4arwlBy2gBoORdcAr2WM/exec',
+  USE_API: true
+};
 
-        // DATA
-        students: [],
-        curhats: [],
-        
-        // FORMS
-        potensiForm: { minat: '', gaya: '', cita_cita: '', karakter: '', ekskul: '' },
-        jurnalForm: { perasaan: '', cerita: '' },
-        newStudent: { name: '', nis: '', class: '' },
-        tempReply: '',
+// ============================================================
+// DATA STORE
+// ============================================================
+let currentUser = null;
+let currentRole = null;
+let currentStudent = null;
+let currentWali = null;
+let isOnline = false;
 
-        // CURHAT FLOW
-        curhatStep: 0,
-        curhatChat: [],
-        curhatForm: { untuk: '', kategori: '', sub: '', darurat: '', cerita: '' },
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+function $(id) { return document.getElementById(id); }
 
-        // SYNC CONFIG - PAKAI NO-CORS
-        SHEET_URL: 'https://script.google.com/macros/s/AKfycbypE1TVPBlAjZKxHAgEk48yFEcBQhuE4xy5LxX89utkEj4nE4agQa8VM8jSE4D5keKGCQ/exec',
-        isSyncing: false,
+function show(id) { $(id).classList.remove('hidden'); }
+function hide(id) { $(id).classList.add('hidden'); }
 
-        // ============ INIT ============
-        init() {
-            // Load data lokal dulu
-            this.loadLocalData();
-            // Coba sync dari sheet
-            this.loadFromSheet();
-        },
+function closeModal(id) { $(id).classList.add('hidden'); }
 
-        loadLocalData() {
-            // Data default
-            this.students = [
-                { id: 's1', name: 'Budi', nis: '12345', class: '7A', is_potensi_filled: false, perbuatan_baik_today: false, nilai: 85, sikap: 'Baik', catatan: 'Aktif', potensi: {} },
-                { id: 's2', name: 'Siti', nis: '12346', class: '7A', is_potensi_filled: true, perbuatan_baik_today: true, nilai: 90, sikap: 'Sangat Baik', catatan: 'Rajin', potensi: {} }
-            ];
-            this.curhats = [
-                { id: 'c1', student_id: 's2', untuk: 'Aku sendiri', kategori: 'Sekolah', sub: 'Pelajaran', tingkat_darurat: 'Saran', cerita: 'Saya kesulitan matematika pak', is_read: false, balasan: 'Nanti saya bantu belajar sore ya.', created_at: new Date().toISOString() }
-            ];
-        },
-
-        // ============ SYNC FUNCTIONS WITH NO-CORS ============
-        async loadFromSheet() {
-            try {
-                this.showNotif('⏳ Loading data...');
-                
-                // Coba dengan no-cors
-                await this.fetchDataNoCors('getStudents', 'students');
-                await this.fetchDataNoCors('getCurhats', 'curhats');
-                
-                this.showNotif('✅ Data loaded!');
-                
-            } catch(error) {
-                console.log('Using local data (offline mode)');
-                this.showNotif('📱 Mode offline - data lokal');
-            }
-        },
-
-        async fetchDataNoCors(action, targetKey) {
-            try {
-                const response = await fetch(this.SHEET_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // <- KRUSIAL: pake no-cors
-                    headers: { 
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ action: action })
-                });
-                
-                // No-cors returns opaque response, kita ga bisa baca
-                console.log(`✅ ${action} sent (no-cors mode)`);
-                
-                // Simulasi sukses
-                return true;
-                
-            } catch(error) {
-                console.warn(`Failed to load ${action}:`, error);
-                throw error;
-            }
-        },
-
-        async syncStudentToSheet(student) {
-            try {
-                const response = await fetch(this.SHEET_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // <- pake no-cors
-                    headers: { 
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'saveStudent',
-                        student: student
-                    })
-                });
-                
-                console.log('✅ Student sync sent:', student.name);
-                return true;
-                
-            } catch(error) {
-                console.error('Sync student error:', error);
-                this.showNotif('⚠️ Gagal sync siswa (offline)');
-                return false;
-            }
-        },
-
-        async syncCurhatToSheet(curhat) {
-            try {
-                const response = await fetch(this.SHEET_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // <- pake no-cors
-                    headers: { 
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'saveCurhat',
-                        curhat: curhat
-                    })
-                });
-                
-                console.log('✅ Curhat sync sent');
-                return true;
-                
-            } catch(error) {
-                console.error('Sync curhat error:', error);
-                this.showNotif('⚠️ Gagal sync curhat (disimpan lokal)');
-                return false;
-            }
-        },
-
-        async syncReplyToSheet(curhatId, balasan) {
-            try {
-                const response = await fetch(this.SHEET_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // <- pake no-cors
-                    headers: { 
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'replyCurhat',
-                        curhatId: curhatId,
-                        balasan: balasan
-                    })
-                });
-                
-                console.log('✅ Reply sync sent');
-                return true;
-                
-            } catch(error) {
-                console.error('Sync reply error:', error);
-                this.showNotif('⚠️ Gagal sync balasan (disimpan lokal)');
-                return false;
-            }
-        },
-
-        // ============ AUTH ============
-        loginStudent() {
-            if(this.loginForm.pin === '51sw@qu') {
-                let student = this.students.find(s => 
-                    s.name.toLowerCase() === this.loginForm.name.toLowerCase() && 
-                    s.class.toLowerCase() === this.loginForm.class.toLowerCase()
-                );
-                if(!student) {
-                    student = { 
-                        id: 's'+Date.now(), 
-                        name: this.loginForm.name, 
-                        nis: 'NEW', 
-                        class: this.loginForm.class, 
-                        is_potensi_filled: false, 
-                        perbuatan_baik_today: false, 
-                        nilai: 0, 
-                        sikap: 'Baik', 
-                        catatan: '',
-                        potensi: {}
-                    };
-                    this.students.push(student);
-                    this.syncStudentToSheet(student);
-                }
-                this.currentUser = student;
-                this.isLoggedIn = true;
-                this.role = 'student';
-                this.studentView = student.is_potensi_filled ? 'dashboard' : 'potensi';
-                this.showNotif('👋 Selamat datang ' + student.name);
-            } else {
-                this.showNotif('❌ PIN/Password salah!');
-            }
-        },
-
-        loginAdmin() {
-            if(this.loginForm.pass === 'd4Rm@app*') {
-                this.currentUser = { name: 'Pak Wali 7A' };
-                this.isLoggedIn = true;
-                this.role = 'admin';
-                this.showNotif('👋 Selamat datang Admin');
-            } else {
-                this.showNotif('❌ Password Wali salah!');
-            }
-        },
-
-        logout() {
-            this.isLoggedIn = false;
-            this.currentUser = null;
-            this.showNotif('👋 Sampai jumpa!');
-        },
-
-        // ============ STUDENT FEATURES ============
-        savePotensi() {
-            this.currentUser.is_potensi_filled = true;
-            this.currentUser.potensi = this.potensiForm;
-            let idx = this.students.findIndex(s => s.id === this.currentUser.id);
-            this.students[idx] = this.currentUser;
-            this.studentView = 'dashboard';
-            this.syncStudentToSheet(this.currentUser);
-            this.showNotif('✅ Peta Potensi Tersimpan!');
-        },
-
-        savePerbuatanBaik(act) {
-            this.currentUser.perbuatan_baik_today = true;
-            let idx = this.students.findIndex(s => s.id === this.currentUser.id);
-            this.students[idx] = this.currentUser;
-            this.activeModal = null;
-            this.syncStudentToSheet(this.currentUser);
-            const praises = ["🌟 Good Job! Kamu hebat!", "💪 Luar biasa! Pertahankan ya!", "😇 Kamu anak baik!"];
-            this.showNotif(praises[Math.floor(Math.random() * praises.length)]);
-        },
-
-        saveJurnal() {
-            this.activeModal = null;
-            this.jurnalForm = { perasaan: '', cerita: '' };
-            this.showNotif('✅ Jurnal Harian Tersimpan!');
-        },
-
-        // ============ CURHAT ============
-        openModal(type) {
-            this.activeModal = type;
-            if(type === 'curhat') {
-                this.curhatStep = 1;
-                this.curhatChat = [{ type: 'bot', text: 'Siapakah kamu?' }];
-                this.curhatForm = { untuk: '', kategori: '', sub: '', darurat: '', cerita: '' };
-            }
-        },
-
-        answerCurhat(field, value) {
-            this.curhatForm[field] = value;
-            this.curhatChat.push({ type: 'user', text: value });
-            
-            if(field === 'untuk') { 
-                this.curhatStep = 2; 
-                this.curhatChat.push({ type: 'bot', text: 'Kategori, apakah ini masalah di rumah atau di sekolah?' }); 
-            } else if(field === 'kategori') { 
-                this.curhatStep = 3; 
-                this.curhatChat.push({ type: 'bot', text: `Masalah di ${value}?` }); 
-            } else if(field === 'sub') { 
-                this.curhatStep = 4; 
-                this.curhatChat.push({ type: 'bot', text: 'Tingkat Darurat?' }); 
-            } else if(field === 'darurat') {
-                this.curhatStep = 5;
-                let msg = 'Masalahnya apa? Ceritakan bebas ya.';
-                if(value === 'Bantuan') msg = '⚠️ Kami akan segera menghubungimu! Tetap tenang ya. Tapi ceritakan dulu apa yang terjadi.';
-                this.curhatChat.push({ type: 'bot', text: msg });
-            }
-        },
-
-        async submitCurhat() {
-            const newCurhat = {
-                id: 'c'+Date.now(),
-                student_id: this.currentUser.id,
-                untuk: this.curhatForm.untuk,
-                kategori: this.curhatForm.kategori,
-                sub: this.curhatForm.sub,
-                tingkat_darurat: this.curhatForm.darurat,
-                cerita: this.curhatForm.cerita,
-                is_read: false,
-                balasan: '',
-                created_at: new Date().toISOString()
-            };
-            
-            // Simpan lokal dulu
-            this.curhats.unshift(newCurhat);
-            this.activeModal = null;
-            this.showNotif('✅ Curhat terkirim!');
-            
-            // Sync ke sheet (dengan no-cors)
-            await this.syncCurhatToSheet(newCurhat);
-        },
-
-        // ============ ADMIN FEATURES ============
-        getStudentStatus(id) {
-            let c = this.curhats.find(c => c.student_id === id && !c.balasan);
-            if(!c) return '🟢';
-            return c.tingkat_darurat === 'Bantuan' ? '🔴' : '🟡';
-        },
-
-        getStudentName(id) {
-            let s = this.students.find(s => s.id === id);
-            return s ? s.name : 'Unknown';
-        },
-
-        async replyCurhat(id) {
-            if (!this.tempReply || this.tempReply.trim() === '') {
-                this.showNotif('⚠️ Tulis balasan dulu!');
-                return;
-            }
-            
-            let c = this.curhats.find(c => c.id === id);
-            if(c) {
-                const replyText = this.tempReply;
-                c.balasan = replyText;
-                this.tempReply = '';
-                this.showNotif('✅ Balasan terkirim!');
-                
-                await this.syncReplyToSheet(id, replyText);
-            }
-        },
-
-        addStudent() {
-            if(this.newStudent.name && this.newStudent.nis) {
-                const newStudent = {
-                    id: 's'+Date.now(),
-                    ...this.newStudent,
-                    is_potensi_filled: false,
-                    perbuatan_baik_today: false,
-                    nilai: 0,
-                    sikap: 'Baik',
-                    catatan: '',
-                    potensi: {}
-                };
-                
-                this.students.push(newStudent);
-                this.newStudent = { name: '', nis: '', class: '' };
-                this.syncStudentToSheet(newStudent);
-                this.showNotif('✅ Siswa ditambahkan!');
-            } else {
-                this.showNotif('⚠️ Nama dan NIS harus diisi!');
-            }
-        },
-
-        resetPass(id) {
-            this.showNotif('🔑 Password siswa direset ke: 51sw@qu');
-        },
-
-        deleteStudent(id) {
-            if (confirm('Yakin hapus siswa ini?')) {
-                this.students = this.students.filter(s => s.id !== id);
-                this.syncAllStudents();
-                this.showNotif('🗑️ Siswa dihapus.');
-            }
-        },
-
-        async syncAllStudents() {
-            this.showNotif('⏳ Syncing all data...');
-            let success = 0;
-            for (let student of this.students) {
-                await this.syncStudentToSheet(student);
-                success++;
-            }
-            this.showNotif(`✅ ${success} data tersinkronisasi!`);
-        },
-
-        // ============ EXPORT EXCEL ============
-        exportExcel() {
-            try {
-                let data = this.students.map(s => {
-                    let curhatCount = this.curhats.filter(c => c.student_id === s.id).length;
-                    return {
-                        'Nama': s.name,
-                        'NIS': s.nis,
-                        'Kelas': s.class,
-                        'Nilai Akademik': s.nilai || 0,
-                        'Sikap': s.sikap || 'Baik',
-                        'Catatan Khusus': s.catatan || '',
-                        'Jumlah Curhat': curhatCount,
-                        'Potensi': s.potensi ? JSON.stringify(s.potensi) : ''
-                    }
-                });
-                
-                if (data.length === 0) {
-                    this.showNotif('⚠️ Tidak ada data untuk di-export');
-                    return;
-                }
-                
-                let ws = XLSX.utils.json_to_sheet(data);
-                const colWidths = Object.keys(data[0]).map(key => ({ 
-                    wch: Math.max(key.length, ...data.map(d => String(d[key]).length || 0)) + 5
-                }));
-                ws['!cols'] = colWidths;
-
-                let wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Laporan Siswa");
-                XLSX.writeFile(wb, "Laporan_DWali.xlsx");
-                this.showNotif('✅ Excel berhasil di-download!');
-            } catch(error) {
-                console.error('Export error:', error);
-                this.showNotif('⚠️ Gagal export Excel: ' + error.message);
-            }
-        },
-
-        // ============ HELPER ============
-        showNotif(text) {
-            this.notif.text = text;
-            this.notif.show = true;
-            clearTimeout(this.notifTimeout);
-            this.notifTimeout = setTimeout(() => { 
-                this.notif.show = false; 
-            }, 4000);
-        }
-    }
+function generateId() {
+  return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
+
+// ============================================================
+// API CALL
+// ============================================================
+function callAPI(action, params = {}) {
+  return new Promise((resolve, reject) => {
+    if (!CONFIG.USE_API || !isOnline) {
+      reject(new Error('API offline'));
+      return;
+    }
+    
+    const url = new URL(CONFIG.API_URL);
+    url.searchParams.append('action', action);
+    url.searchParams.append('callback', 'callback');
+    Object.keys(params).forEach(key => {
+      url.searchParams.append(key, params[key]);
+    });
+    
+    fetch(url.toString(), { method: 'GET' })
+      .then(response => response.text())
+      .then(text => {
+        try {
+          const json = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+          const data = JSON.parse(json);
+          resolve(data);
+        } catch(e) {
+          reject(e);
+        }
+      })
+      .catch(reject);
+  });
+}
+
+// ============================================================
+// CHECK CONNECTION
+// ============================================================
+function checkConnection() {
+  if (!CONFIG.USE_API) {
+    isOnline = false;
+    updateStatus(false);
+    return;
+  }
+  
+  callAPI('ping')
+    .then(() => {
+      isOnline = true;
+      updateStatus(true);
+    })
+    .catch(() => {
+      isOnline = false;
+      updateStatus(false);
+    });
+}
+
+function updateStatus(online) {
+  const el = $('statusText');
+  if (online) {
+    el.innerHTML = '<i class="fas fa-wifi text-green-500"></i> Online';
+    el.className = 'status-online';
+  } else {
+    el.innerHTML = '<i class="fas fa-wifi-slash text-red-500"></i> Offline';
+    el.className = 'status-offline';
+  }
+}
+
+// ============================================================
+// SET ROLE
+// ============================================================
+function setRole(role) {
+  const roles = ['student', 'wali', 'admin'];
+  roles.forEach(r => {
+    const btn = $('role' + r.charAt(0).toUpperCase() + r.slice(1));
+    const login = $(r + 'Login');
+    if (r === role) {
+      btn.className = 'flex-1 py-2 px-4 rounded-lg font-semibold bg-blue-500 text-white';
+      login.classList.remove('hidden');
+    } else {
+      btn.className = 'flex-1 py-2 px-4 rounded-lg font-semibold bg-gray-200 text-gray-600';
+      login.classList.add('hidden');
+    }
+  });
+  $('loginError').classList.add('hidden');
+}
+
+// ============================================================
+// LOGIN FUNCTIONS
+// ============================================================
+async function loginStudent() {
+  const name = $('studentName').value.trim();
+  const class_ = $('studentClass').value.trim();
+  const password = $('studentPassword').value || '51sw@qu';
+  
+  if (!name || !class_) {
+    showLoginError('Mohon isi nama dan kelas');
+    return;
+  }
+  
+  try {
+    const student = await callAPI('getStudentByNameAndClass', { name, class_ });
+    
+    if (!student || !student.id) {
+      showLoginError('Siswa tidak ditemukan');
+      return;
+    }
+    
+    if (student.password !== password) {
+      showLoginError('PIN salah. Default: 51sw@qu');
+      return;
+    }
+    
+    currentStudent = student;
+    currentUser = student;
+    currentRole = 'student';
+    showStudentDashboard();
+  } catch(e) {
+    showLoginError('Error: ' + e.message);
+  }
+}
+
+async function loginWali() {
+  const email = $('waliEmail').value.trim();
+  const password = $('waliPassword').value || 'd4Rm@app';
+  
+  if (!email) {
+    showLoginError('Mohon isi email');
+    return;
+  }
+  
+  try {
+    const user = await callAPI('getUserByEmail', { email });
+    
+    if (!user || !user.id) {
+      showLoginError('Email tidak ditemukan');
+      return;
+    }
+    
+    if (user.password !== password) {
+      showLoginError('Password salah. Default: d4Rm@app');
+      return;
+    }
+    
+    if (user.role !== 'wali') {
+      showLoginError('Akun ini bukan Wali Kelas');
+      return;
+    }
+    
+    currentWali = user;
+    currentUser = user;
+    currentRole = 'wali';
+    showWaliDashboard();
+  } catch(e) {
+    showLoginError('Error: ' + e.message);
+  }
+}
+
+async function loginAdmin() {
+  const email = $('adminEmail').value.trim();
+  const password = $('adminPassword').value || 'd4Rm@app';
+  
+  if (!email) {
+    showLoginError('Mohon isi email');
+    return;
+  }
+  
+  try {
+    const user = await callAPI('getUserByEmail', { email });
+    
+    if (!user || !user.id) {
+      showLoginError('Email tidak ditemukan');
+      return;
+    }
+    
+    if (user.password !== password) {
+      showLoginError('Password salah. Default: d4Rm@app');
+      return;
+    }
+    
+    if (user.role !== 'super_admin') {
+      showLoginError('Akun ini bukan Admin Super');
+      return;
+    }
+    
+    currentUser = user;
+    currentRole = 'admin';
+    showAdminDashboard();
+  } catch(e) {
+    showLoginError('Error: ' + e.message);
+  }
+}
+
+function showLoginError(msg) {
+  const el = $('loginError');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ============================================================
+// DASHBOARD FUNCTIONS
+// ============================================================
+function showStudentDashboard() {
+  hide('loginPage');
+  show('studentDashboard');
+  hide('waliDashboard');
+  hide('adminDashboard');
+  
+  $('studentNameDisplay').textContent = currentStudent.name;
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  loadStudentData();
+}
+
+async function showWaliDashboard() {
+  hide('loginPage');
+  hide('studentDashboard');
+  show('waliDashboard');
+  hide('adminDashboard');
+  
+  $('waliNameDisplay').textContent = currentWali.name;
+  await loadWaliData();
+}
+
+async function showAdminDashboard() {
+  hide('loginPage');
+  hide('studentDashboard');
+  hide('waliDashboard');
+  show('adminDashboard');
+  
+  $('adminNameDisplay').textContent = currentUser.name;
+  await loadAdminData();
+}
+
+function logout() {
+  if (confirm('Yakin ingin keluar?')) {
+    currentUser = null;
+    currentRole = null;
+    currentStudent = null;
+    currentWali = null;
+    hide('studentDashboard');
+    hide('waliDashboard');
+    hide('adminDashboard');
+    show('loginPage');
+    ['studentName', 'studentClass', 'studentPassword', 'waliEmail', 'waliPassword', 'adminEmail', 'adminPassword'].forEach(id => {
+      if ($(id)) $(id).value = '';
+    });
+  }
+}
+
+function updateDateTime() {
+  const now = new Date();
+  $('dateDisplay').textContent = now.toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+// ============================================================
+// STUDENT FUNCTIONS
+// ============================================================
+async function loadStudentData() {
+  try {
+    // Load potensi
+    const potensi = await callAPI('getPotensi', { studentId: currentStudent.id });
+    if (potensi) {
+      $('recentActivity').innerHTML = '🗺️ Peta Potensi sudah diisi';
+    }
+    
+    // Load perbuatan hari ini
+    const pb = await callAPI('getPerbuatanHariIni', { studentId: currentStudent.id });
+    if (pb) {
+      $('recentActivity').innerHTML = '⭐ Perbuatan baik: ' + pb.action;
+    }
+  } catch(e) {
+    console.warn('Load student data error:', e);
+  }
+}
+
+function openCurhat() {
+  show('curhatModal');
+  $('curhatFlow').innerHTML = '<div class="text-gray-500">Mulai curhat dengan memilih di bawah</div>';
+  $('curhatOptions').innerHTML = `
+    <button onclick="curhatStep1('Aku sendiri')" class="btn-primary text-sm py-1 px-3">Aku sendiri</button>
+    <button onclick="curhatStep1('Untuk temanku')" class="btn-primary text-sm py-1 px-3 bg-purple-500">Untuk temanku</button>
+  `;
+  $('curhatTextArea').classList.add('hidden');
+  $('curhatResult').classList.add('hidden');
+}
+
+let curhatData = {};
+
+function curhatStep1(siapa) {
+  curhatData.untuk_siapa = siapa;
+  $('curhatFlow').innerHTML = '<div class="text-gray-600">Kategori masalah?</div>';
+  $('curhatOptions').innerHTML = `
+    <button onclick="curhatStep2('Sekolah')" class="btn-primary text-sm py-1 px-3">Sekolah</button>
+    <button onclick="curhatStep2('Rumah')" class="btn-primary text-sm py-1 px-3 bg-purple-500">Rumah</button>
+  `;
+}
+
+function curhatStep2(kategori) {
+  curhatData.kategori = kategori;
+  const options = kategori === 'Sekolah' 
+    ? ['Perundungan', 'Pelajaran', 'Teman', 'Guru']
+    : ['Orang tua', 'Saudara', 'Keuangan'];
+  
+  $('curhatFlow').innerHTML = '<div class="text-gray-600">Masalah spesifik?</div>';
+  $('curhatOptions').innerHTML = options.map(opt => 
+    `<button onclick="curhatStep3('${opt}')" class="btn-primary text-sm py-1 px-3">${opt}</button>`
+  ).join('');
+}
+
+function curhatStep3(sub) {
+  curhatData.sub = sub;
+  $('curhatFlow').innerHTML = '<div class="text-gray-600">Tingkat darurat?</div>';
+  $('curhatOptions').innerHTML = `
+    <button onclick="curhatStep4('Aku cuma mau cerita')" class="btn-primary text-sm py-1 px-3">Cuma mau cerita</button>
+    <button onclick="curhatStep4('Aku butuh saran')" class="btn-primary text-sm py-1 px-3 bg-yellow-500">Butuh saran</button>
+    <button onclick="curhatStep4('Aku butuh bantuan sekarang')" class="btn-primary text-sm py-1 px-3 bg-red-500">Butuh bantuan sekarang</button>
+  `;
+}
+
+function curhatStep4(darurat) {
+  curhatData.darurat = darurat;
+  $('curhatFlow').innerHTML = '<div class="text-gray-600">Ceritakan masalahmu...</div>';
+  $('curhatOptions').innerHTML = '';
+  $('curhatTextArea').classList.remove('hidden');
+}
+
+async function submitCurhat() {
+  const cerita = $('curhatCerita').value.trim();
+  if (!cerita) {
+    alert('Tulis cerita dulu ya');
+    return;
+  }
+  
+  try {
+    const result = await callAPI('addCurhat', {
+      studentId: currentStudent.id,
+      untukSiapa: curhatData.untuk_siapa,
+      kategori: curhatData.kategori,
+      subKategori: curhatData.sub,
+      tingkatDarurat: curhatData.darurat,
+      cerita: cerita
+    });
+    
+    if (result.success) {
+      $('curhatTextArea').classList.add('hidden');
+      $('curhatResult').classList.remove('hidden');
+      $('curhatResult').textContent = '✅ Terima kasih sudah curhat!';
+      $('curhatCerita').value = '';
+      $('recentActivity').innerHTML = '💬 Curhat terkirim';
+      
+      if (curhatData.darurat === 'Aku butuh bantuan sekarang') {
+        alert('⚠️ Kami akan segera menghubungimu! Tetap tenang ya.');
+      }
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// JURNAL FUNCTIONS
+// ============================================================
+function openJurnal() {
+  show('jurnalModal');
+  $('jurnalFeedback').textContent = '';
+}
+
+function pilihEmoji(emoji) {
+  $('jurnalEmoji').value = emoji;
+  document.querySelectorAll('#jurnalModal .text-3xl span').forEach(el => {
+    el.style.transform = el.textContent === emoji ? 'scale(1.4)' : 'scale(1)';
+  });
+}
+
+async function simpanJurnal() {
+  const emoji = $('jurnalEmoji').value;
+  const cerita = $('jurnalCerita').value.trim() || 'Hari ini biasa saja.';
+  
+  try {
+    const result = await callAPI('addJurnal', {
+      studentId: currentStudent.id,
+      emoji: emoji,
+      cerita: cerita
+    });
+    
+    if (result.success) {
+      $('jurnalFeedback').textContent = '✅ Jurnal tersimpan!';
+      $('jurnalCerita').value = '';
+      $('recentActivity').innerHTML = '📖 Jurnal: ' + cerita.substring(0, 30) + '...';
+      setTimeout(() => closeModal('jurnalModal'), 1500);
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// PERBUATAN BAIK
+// ============================================================
+function openPerbuatanBaik() {
+  show('perbuatanModal');
+  $('perbuatanFeedback').textContent = '';
+  $('perbuatanLain').value = '';
+}
+
+async function catatPerbuatan(action) {
+  if (!action || action.trim() === '') {
+    alert('Tulis perbuatan baiknya');
+    return;
+  }
+  
+  try {
+    const result = await callAPI('addPerbuatanBaik', {
+      studentId: currentStudent.id,
+      action: action
+    });
+    
+    if (result.success) {
+      const feedbacks = ['🌟 Good Job!', '💪 Luar biasa!', '😇 Kamu anak baik!', '⚡ Keren!'];
+      $('perbuatanFeedback').textContent = feedbacks[Math.floor(Math.random() * feedbacks.length)];
+      $('recentActivity').innerHTML = '⭐ Perbuatan baik: "' + action + '"';
+      setTimeout(() => closeModal('perbuatanModal'), 1500);
+    } else {
+      alert(result.error || 'Gagal mencatat');
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// POTENSI
+// ============================================================
+function openPotensi() {
+  show('potensiModal');
+}
+
+async function simpanPotensi() {
+  const minat = $('potensiMinat').value;
+  const gaya = $('potensiGaya').value;
+  const cita = $('potensiCita').value.trim() || 'Belum diisi';
+  const karakter = $('potensiKarakter').value;
+  
+  try {
+    const result = await callAPI('savePotensi', {
+      studentId: currentStudent.id,
+      minat: minat,
+      gayaBelajar: gaya,
+      citaCita: cita,
+      kekuatanKarakter: karakter,
+      ekstrakurikuler: '-'
+    });
+    
+    if (result.success) {
+      alert('✅ Peta Potensi berhasil disimpan!');
+      closeModal('potensiModal');
+      $('recentActivity').innerHTML = '🗺️ Peta Potensi disimpan';
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// WALI FUNCTIONS
+// ============================================================
+async function loadWaliData() {
+  try {
+    const students = await callAPI('getStudentsByWali', { waliId: currentWali.id });
+    $('totalSiswa').textContent = students.length;
+    
+    const curhat = await callAPI('getAllCurhat');
+    const waliCurhat = curhat.filter(c => {
+      const student = students.find(s => s.id === c.student_id);
+      return student !== undefined;
+    });
+    
+    const unread = waliCurhat.filter(c => c.is_read === false || c.is_read === 'FALSE');
+    const darurat = waliCurhat.filter(c => c.tingkat_darurat === 'Aku butuh bantuan sekarang');
+    
+    $('curhatBelumDibaca').textContent = unread.length;
+    $('curhatDarurat').textContent = darurat.length;
+    
+    renderStudentList(students);
+    renderCurhatInbox(waliCurhat);
+  } catch(e) {
+    console.warn('Load wali data error:', e);
+  }
+}
+
+function renderStudentList(students) {
+  const list = $('studentList');
+  if (!students || students.length === 0) {
+    list.innerHTML = '<div class="text-gray-400 text-center py-4">Belum ada siswa</div>';
+    return;
+  }
+  
+  list.innerHTML = students.map(s => `
+    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+      <div>
+        <div class="font-semibold">${s.name}</div>
+        <div class="text-xs text-gray-500">NIS: ${s.nis} · Kelas: ${s.class}</div>
+      </div>
+      <button onclick="deleteStudent('${s.id}')" class="text-red-500 hover:text-red-700">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+function renderCurhatInbox(curhats) {
+  const inbox = $('curhatInbox');
+  if (!curhats || curhats.length === 0) {
+    inbox.innerHTML = '<div class="text-gray-400 text-center py-4">Belum ada curhat masuk</div>';
+    return;
+  }
+  
+  inbox.innerHTML = curhats.slice(0, 5).map(c => `
+    <div class="p-3 bg-gray-50 rounded-lg ${c.is_read ? 'opacity-75' : 'border-l-4 border-blue-500'}">
+      <div class="flex justify-between items-start">
+        <span class="font-semibold">${c.student_name || 'Siswa'}</span>
+        <span class="text-xs text-gray-400">${new Date(c.created_at).toLocaleString()}</span>
+      </div>
+      <div class="text-sm">${c.cerita}</div>
+      <div class="flex gap-2 mt-1">
+        <span class="text-xs bg-blue-100 px-2 py-0.5 rounded">${c.kategori}</span>
+        ${c.tingkat_darurat === 'Aku butuh bantuan sekarang' ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">⚠️ Darurat</span>' : ''}
+      </div>
+      <button onclick="balasCurhat('${c.id}')" class="btn-primary text-xs py-1 px-3 mt-2">
+        <i class="fas fa-reply mr-1"></i> Balas
+      </button>
+    </div>
+  `).join('');
+}
+
+function showTambahSiswa() {
+  $('siswaKelas').value = currentWali.class || '';
+  show('tambahSiswaModal');
+}
+
+async function tambahSiswa() {
+  const nis = $('siswaNIS').value.trim();
+  const name = $('siswaNama').value.trim();
+  const kelas = $('siswaKelas').value.trim();
+  const pin = $('siswaPIN').value.trim() || '51sw@qu';
+  
+  if (!nis || !name || !kelas) {
+    alert('Mohon isi semua data');
+    return;
+  }
+  
+  try {
+    const result = await callAPI('addStudent', {
+      nis: nis,
+      name: name,
+      password: pin,
+      waliId: currentWali.id,
+      class: kelas
+    });
+    
+    if (result.success) {
+      alert('✅ Siswa berhasil ditambahkan!');
+      closeModal('tambahSiswaModal');
+      loadWaliData();
+    } else {
+      alert('❌ ' + result.error);
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function deleteStudent(id) {
+  if (!confirm('Yakin ingin menghapus siswa ini?')) return;
+  
+  try {
+    const result = await callAPI('deleteStudent', { studentId: id });
+    if (result.success) {
+      alert('✅ Siswa dihapus');
+      loadWaliData();
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function balasCurhat(curhatId) {
+  const message = prompt('Tulis balasan untuk curhat ini:');
+  if (!message) return;
+  
+  try {
+    const result = await callAPI('addCurhatReply', {
+      curhatId: curhatId,
+      studentId: currentWali.id,
+      sender: 'wali',
+      senderName: currentWali.name,
+      message: message,
+      isWali: 'true'
+    });
+    
+    if (result.success) {
+      alert('✅ Balasan terkirim!');
+      loadWaliData();
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// ADMIN FUNCTIONS
+// ============================================================
+async function loadAdminData() {
+  try {
+    const users = await callAPI('getAllUsers');
+    const students = await callAPI('getAllStudents');
+    const curhat = await callAPI('getAllCurhat');
+    
+    const waliUsers = users.filter(u => u.role === 'wali');
+    $('totalWaliAdmin').textContent = waliUsers.length;
+    $('totalSiswaAdmin').textContent = students.length;
+    $('totalCurhatAdmin').textContent = curhat.length;
+    
+    renderWaliList(waliUsers);
+  } catch(e) {
+    console.warn('Load admin data error:', e);
+  }
+}
+
+function renderWaliList(walis) {
+  const list = $('waliList');
+  if (!walis || walis.length === 0) {
+    list.innerHTML = '<div class="text-gray-400 text-center py-4">Belum ada wali</div>';
+    return;
+  }
+  
+  list.innerHTML = walis.map(w => `
+    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+      <div>
+        <div class="font-semibold">${w.name}</div>
+        <div class="text-xs text-gray-500">${w.email} · Kelas: ${w.class}</div>
+      </div>
+      <button onclick="deleteWali('${w.id}')" class="text-red-500 hover:text-red-700">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+function showTambahWali() {
+  show('tambahWaliModal');
+}
+
+async function tambahWali() {
+  const name = $('waliNama').value.trim();
+  const email = $('waliEmail').value.trim();
+  const kelas = $('waliKelas').value.trim();
+  const password = $('waliPassword').value.trim() || 'd4Rm@app';
+  
+  if (!name || !email || !kelas) {
+    alert('Mohon isi semua data');
+    return;
+  }
+  
+  try {
+    const result = await callAPI('addUser', {
+      email: email,
+      password: password,
+      role: 'wali',
+      name: name,
+      class: kelas
+    });
+    
+    if (result.success) {
+      alert('✅ Wali berhasil ditambahkan!');
+      closeModal('tambahWaliModal');
+      loadAdminData();
+    } else {
+      alert('❌ ' + result.error);
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function deleteWali(id) {
+  if (!confirm('Yakin ingin menghapus wali ini?')) return;
+  
+  try {
+    const result = await callAPI('deleteUser', { userId: id });
+    if (result.success) {
+      alert('✅ Wali dihapus');
+      loadAdminData();
+    } else {
+      alert('❌ ' + result.error);
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  setRole('student');
+  checkConnection();
+  setInterval(checkConnection, 30000);
+  
+  console.log('🏫 Wali Digital v8.0');
+  console.log('📌 Default Login:');
+  console.log('  Siswa: Ahmad Fauzi / 7A / 51sw@qu');
+  console.log('  Wali: wali@walidigital.com / d4Rm@app');
+  console.log('  Admin: admin@walidigital.com / d4Rm@app');
+});
 </script>
+
 </body>
 </html>
