@@ -2,22 +2,96 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wali Digital v8</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Wali Digital</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background: #e8f4f8; font-family: 'Segoe UI', Arial, sans-serif; }
-    .card { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.3); }
-    .btn-primary { background: #4a9bc7; color: white; padding: 10px 24px; border-radius: 12px; border: none; font-weight: 600; transition: all 0.3s; }
-    .btn-primary:hover { background: #3a8ab7; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(74,155,199,0.3); }
-    .btn-danger { background: #e8848a; color: white; padding: 10px 24px; border-radius: 12px; border: none; font-weight: 600; }
+    * { box-sizing: border-box; }
+    body { 
+      background: #e8f4f8; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+    }
+    .glass {
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+    .btn-primary {
+      background: #4a9bc7;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      background: #3a8ab7;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(74,155,199,0.3);
+    }
+    .btn-danger {
+      background: #e8848a;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
     .btn-danger:hover { background: #d47076; }
-    .input { background: rgba(255,255,255,0.7); border: 2px solid rgba(74,155,199,0.2); border-radius: 12px; padding: 10px 16px; width: 100%; }
-    .input:focus { border-color: #4a9bc7; outline: none; box-shadow: 0 0 0 3px rgba(74,155,199,0.1); }
+    .input {
+      background: rgba(255,255,255,0.8);
+      border: 2px solid rgba(74,155,199,0.2);
+      border-radius: 12px;
+      padding: 10px 16px;
+      width: 100%;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .input:focus {
+      border-color: #4a9bc7;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(74,155,199,0.1);
+    }
     .hidden { display: none !important; }
     .status-online { color: #4a9b7a; }
     .status-offline { color: #e8848a; }
+    .card-hover { transition: all 0.3s; cursor: pointer; }
+    .card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-red { background: #fee2e2; color: #dc2626; }
+    .badge-yellow { background: #fef3c7; color: #d97706; }
+    .badge-green { background: #d1fae5; color: #059669; }
+    .badge-blue { background: #dbeafe; color: #2563eb; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      max-width: 400px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
   </style>
 </head>
 <body>
@@ -26,13 +100,14 @@
 
   <!-- ===== CONNECTION STATUS ===== -->
   <div id="connectionStatus" class="text-right text-sm mb-2">
-    <span id="statusText"><i class="fas fa-wifi"></i> Online</span>
+    <span id="statusText"><i class="fas fa-spinner fa-spin"></i> Checking...</span>
   </div>
 
   <!-- ===== LOGIN ===== -->
-  <div id="loginPage" class="card p-8 mt-4">
+  <div id="loginPage" class="glass p-8 mt-4">
     <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-blue-600">🏫 Wali Digital</h1>
+      <div class="text-5xl mb-2">🏫</div>
+      <h1 class="text-3xl font-bold text-blue-600">Wali Digital</h1>
       <p class="text-gray-500 text-sm">Sistem Manajemen Siswa</p>
     </div>
 
@@ -71,7 +146,7 @@
       <button onclick="loginAdmin()" class="btn-primary w-full"><i class="fas fa-sign-in-alt mr-2"></i> Masuk</button>
     </div>
 
-    <div id="loginError" class="text-red-500 text-sm mt-3 hidden"></div>
+    <div id="loginError" class="text-red-500 text-sm mt-3 hidden text-center"></div>
   </div>
 
   <!-- ===== DASHBOARD SISWA ===== -->
@@ -81,31 +156,31 @@
         <h2 class="text-xl font-bold">Halo, <span id="studentNameDisplay" class="text-blue-600">Siswa</span> 👋</h2>
         <p class="text-sm text-gray-500" id="dateDisplay"></p>
       </div>
-      <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+      <button onclick="logout()" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt text-xl"></i></button>
     </div>
 
     <!-- Quick Actions -->
     <div class="grid grid-cols-2 gap-3 mb-4">
-      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openCurhat()">
+      <div class="glass p-4 text-center card-hover" onclick="openCurhat()">
         <i class="fas fa-comment-dots text-3xl text-purple-500"></i>
         <div class="font-semibold text-sm mt-1">Curhat</div>
       </div>
-      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openJurnal()">
+      <div class="glass p-4 text-center card-hover" onclick="openJurnal()">
         <i class="fas fa-book-open text-3xl text-blue-500"></i>
         <div class="font-semibold text-sm mt-1">Jurnal</div>
       </div>
-      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openPerbuatanBaik()">
+      <div class="glass p-4 text-center card-hover" onclick="openPerbuatanBaik()">
         <i class="fas fa-star text-3xl text-yellow-500"></i>
         <div class="font-semibold text-sm mt-1">Perbuatan Baik</div>
       </div>
-      <div class="card p-4 text-center cursor-pointer hover:shadow-lg transition" onclick="openPotensi()">
+      <div class="glass p-4 text-center card-hover" onclick="openPotensi()">
         <i class="fas fa-compass text-3xl text-green-500"></i>
         <div class="font-semibold text-sm mt-1">Peta Potensi</div>
       </div>
     </div>
 
     <!-- Recent Activity -->
-    <div class="card p-4">
+    <div class="glass p-4">
       <h3 class="font-bold mb-2"><i class="fas fa-bolt text-yellow-500 mr-2"></i>Aktivitas Terakhir</h3>
       <div id="recentActivity" class="text-sm text-gray-500">Belum ada aktivitas</div>
     </div>
@@ -118,27 +193,27 @@
         <h2 class="text-xl font-bold">👨‍🏫 <span id="waliNameDisplay" class="text-blue-600">Wali</span></h2>
         <p class="text-sm text-gray-500">Dashboard Wali Kelas</p>
       </div>
-      <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+      <button onclick="logout()" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt text-xl"></i></button>
     </div>
 
     <!-- Stats -->
     <div class="grid grid-cols-3 gap-2 mb-4">
-      <div class="card p-3 text-center">
+      <div class="glass p-3 text-center">
         <div class="text-2xl font-bold text-blue-600" id="totalSiswa">0</div>
         <div class="text-xs text-gray-500">Siswa</div>
       </div>
-      <div class="card p-3 text-center">
+      <div class="glass p-3 text-center">
         <div class="text-2xl font-bold text-red-500" id="curhatBelumDibaca">0</div>
         <div class="text-xs text-gray-500">Belum Dibaca</div>
       </div>
-      <div class="card p-3 text-center">
+      <div class="glass p-3 text-center">
         <div class="text-2xl font-bold text-yellow-500" id="curhatDarurat">0</div>
         <div class="text-xs text-gray-500">Darurat</div>
       </div>
     </div>
 
     <!-- Student List -->
-    <div class="card p-4">
+    <div class="glass p-4 mb-4">
       <div class="flex justify-between items-center mb-3">
         <h3 class="font-bold"><i class="fas fa-users mr-2"></i>Daftar Siswa</h3>
         <button onclick="showTambahSiswa()" class="btn-primary text-sm py-1 px-3"><i class="fas fa-plus mr-1"></i>Tambah</button>
@@ -147,7 +222,7 @@
     </div>
 
     <!-- Curhat Inbox -->
-    <div class="card p-4 mt-4">
+    <div class="glass p-4">
       <h3 class="font-bold mb-3"><i class="fas fa-inbox mr-2"></i>Curhat Masuk</h3>
       <div id="curhatInbox" class="space-y-2"></div>
     </div>
@@ -160,27 +235,27 @@
         <h2 class="text-xl font-bold">🛡️ <span id="adminNameDisplay" class="text-purple-600">Admin</span></h2>
         <p class="text-sm text-gray-500">Dashboard Super Admin</p>
       </div>
-      <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+      <button onclick="logout()" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt text-xl"></i></button>
     </div>
 
     <!-- Stats -->
     <div class="grid grid-cols-3 gap-2 mb-4">
-      <div class="card p-3 text-center">
+      <div class="glass p-3 text-center">
         <div class="text-2xl font-bold text-blue-600" id="totalWaliAdmin">0</div>
         <div class="text-xs text-gray-500">Wali</div>
       </div>
-      <div class="card p-3 text-center">
+      <div class="glass p-3 text-center">
         <div class="text-2xl font-bold text-purple-600" id="totalSiswaAdmin">0</div>
         <div class="text-xs text-gray-500">Siswa</div>
       </div>
-      <div class="card p-3 text-center">
+      <div class="glass p-3 text-center">
         <div class="text-2xl font-bold text-green-600" id="totalCurhatAdmin">0</div>
         <div class="text-xs text-gray-500">Curhat</div>
       </div>
     </div>
 
     <!-- Wali List -->
-    <div class="card p-4">
+    <div class="glass p-4">
       <div class="flex justify-between items-center mb-3">
         <h3 class="font-bold"><i class="fas fa-chalkboard-teacher mr-2"></i>Wali Kelas</h3>
         <button onclick="showTambahWali()" class="btn-primary text-sm py-1 px-3"><i class="fas fa-plus mr-1"></i>Tambah</button>
@@ -192,13 +267,13 @@
   <!-- ===== MODALS ===== -->
   
   <!-- Curhat Modal -->
-  <div id="curhatModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('curhatModal')">
-    <div class="card p-6 max-w-sm w-full max-h-[80vh] overflow-y-auto">
+  <div id="curhatModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('curhatModal')">
+    <div class="glass modal-box">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg"><i class="fas fa-comment-dots text-purple-500 mr-2"></i>Curhat</h3>
-        <button onclick="closeModal('curhatModal')" class="text-gray-500 hover:text-red-500">✕</button>
+        <button onclick="closeModal('curhatModal')" class="text-gray-500 hover:text-red-500 text-xl">✕</button>
       </div>
-      <div id="curhatFlow" class="space-y-2"></div>
+      <div id="curhatFlow" class="space-y-2 text-sm"></div>
       <div id="curhatOptions" class="flex flex-wrap gap-2 mt-3"></div>
       <div id="curhatTextArea" class="hidden mt-3">
         <textarea id="curhatCerita" class="input" rows="3" placeholder="Ceritakan masalahmu..."></textarea>
@@ -209,18 +284,18 @@
   </div>
 
   <!-- Jurnal Modal -->
-  <div id="jurnalModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('jurnalModal')">
-    <div class="card p-6 max-w-sm w-full">
+  <div id="jurnalModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('jurnalModal')">
+    <div class="glass modal-box">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg"><i class="fas fa-book-open text-blue-500 mr-2"></i>Jurnal Harian</h3>
-        <button onclick="closeModal('jurnalModal')" class="text-gray-500 hover:text-red-500">✕</button>
+        <button onclick="closeModal('jurnalModal')" class="text-gray-500 hover:text-red-500 text-xl">✕</button>
       </div>
       <div class="text-center text-3xl mb-3">
-        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😊')">😊</span>
-        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😐')">😐</span>
-        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😢')">😢</span>
-        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😡')">😡</span>
-        <span class="cursor-pointer hover:scale-125 inline-block transition" onclick="pilihEmoji('😴')">😴</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition mx-1" onclick="pilihEmoji('😊')">😊</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition mx-1" onclick="pilihEmoji('😐')">😐</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition mx-1" onclick="pilihEmoji('😢')">😢</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition mx-1" onclick="pilihEmoji('😡')">😡</span>
+        <span class="cursor-pointer hover:scale-125 inline-block transition mx-1" onclick="pilihEmoji('😴')">😴</span>
       </div>
       <input id="jurnalEmoji" type="hidden" value="😊">
       <textarea id="jurnalCerita" class="input" rows="3" placeholder="Ceritakan harimu..."></textarea>
@@ -230,11 +305,11 @@
   </div>
 
   <!-- Perbuatan Baik Modal -->
-  <div id="perbuatanModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('perbuatanModal')">
-    <div class="card p-6 max-w-sm w-full">
+  <div id="perbuatanModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('perbuatanModal')">
+    <div class="glass modal-box">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg"><i class="fas fa-star text-yellow-500 mr-2"></i>Perbuatan Baik</h3>
-        <button onclick="closeModal('perbuatanModal')" class="text-gray-500 hover:text-red-500">✕</button>
+        <button onclick="closeModal('perbuatanModal')" class="text-gray-500 hover:text-red-500 text-xl">✕</button>
       </div>
       <div class="grid grid-cols-2 gap-2">
         <button onclick="catatPerbuatan('Membantu teman')" class="p-2 bg-gray-100 rounded-lg hover:bg-blue-100">🤝 Membantu teman</button>
@@ -251,11 +326,11 @@
   </div>
 
   <!-- Potensi Modal -->
-  <div id="potensiModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('potensiModal')">
-    <div class="card p-6 max-w-sm w-full">
+  <div id="potensiModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('potensiModal')">
+    <div class="glass modal-box">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg"><i class="fas fa-compass text-green-500 mr-2"></i>Peta Potensi</h3>
-        <button onclick="closeModal('potensiModal')" class="text-gray-500 hover:text-red-500">✕</button>
+        <button onclick="closeModal('potensiModal')" class="text-gray-500 hover:text-red-500 text-xl">✕</button>
       </div>
       <div class="space-y-3">
         <div>
@@ -286,11 +361,11 @@
   </div>
 
   <!-- Tambah Siswa Modal -->
-  <div id="tambahSiswaModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('tambahSiswaModal')">
-    <div class="card p-6 max-w-sm w-full">
+  <div id="tambahSiswaModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('tambahSiswaModal')">
+    <div class="glass modal-box">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg"><i class="fas fa-user-plus text-green-500 mr-2"></i>Tambah Siswa</h3>
-        <button onclick="closeModal('tambahSiswaModal')" class="text-gray-500 hover:text-red-500">✕</button>
+        <button onclick="closeModal('tambahSiswaModal')" class="text-gray-500 hover:text-red-500 text-xl">✕</button>
       </div>
       <div class="space-y-3">
         <input id="siswaNIS" class="input" placeholder="NIS">
@@ -303,17 +378,17 @@
   </div>
 
   <!-- Tambah Wali Modal -->
-  <div id="tambahWaliModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden" onclick="if(event.target===this) closeModal('tambahWaliModal')">
-    <div class="card p-6 max-w-sm w-full">
+  <div id="tambahWaliModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('tambahWaliModal')">
+    <div class="glass modal-box">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg"><i class="fas fa-user-plus text-purple-500 mr-2"></i>Tambah Wali</h3>
-        <button onclick="closeModal('tambahWaliModal')" class="text-gray-500 hover:text-red-500">✕</button>
+        <button onclick="closeModal('tambahWaliModal')" class="text-gray-500 hover:text-red-500 text-xl">✕</button>
       </div>
       <div class="space-y-3">
-        <input id="waliNama" class="input" placeholder="Nama Wali">
-        <input id="waliEmail" class="input" placeholder="Email Wali">
-        <input id="waliKelas" class="input" placeholder="Kelas">
-        <input id="waliPassword" class="input" placeholder="Password (default: d4Rm@app)" value="d4Rm@app">
+        <input id="waliNamaBaru" class="input" placeholder="Nama Wali">
+        <input id="waliEmailBaru" class="input" placeholder="Email Wali">
+        <input id="waliKelasBaru" class="input" placeholder="Kelas">
+        <input id="waliPasswordBaru" class="input" placeholder="Password (default: d4Rm@app)" value="d4Rm@app">
         <button onclick="tambahWali()" class="btn-primary w-full"><i class="fas fa-save mr-2"></i>Simpan</button>
       </div>
     </div>
@@ -323,10 +398,9 @@
 
 <script>
 // ============================================================
-// CONFIGURATION
+// CONFIGURATION - 🔥 GANTI DENGAN URL WEB APP ANDA
 // ============================================================
 const CONFIG = {
-  // 🔥 GANTI DENGAN URL WEB APP ANDA
   API_URL: 'https://script.google.com/macros/s/AKfycbwbqvRIvpHaQ9pmrHMUFxS5Xu_bfW8mIG2t7evUBIu7pqQy4arwlBy2gBoORdcAr2WM/exec',
   USE_API: true
 };
@@ -339,6 +413,8 @@ let currentRole = null;
 let currentStudent = null;
 let currentWali = null;
 let isOnline = false;
+let curhatStep = 0;
+let curhatData = {};
 
 // ============================================================
 // UTILITY FUNCTIONS
@@ -350,39 +426,53 @@ function hide(id) { $(id).classList.add('hidden'); }
 
 function closeModal(id) { $(id).classList.add('hidden'); }
 
-function generateId() {
-  return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
 // ============================================================
-// API CALL
+// API CALL - FIXED VERSION
 // ============================================================
 function callAPI(action, params = {}) {
   return new Promise((resolve, reject) => {
-    if (!CONFIG.USE_API || !isOnline) {
-      reject(new Error('API offline'));
+    if (!CONFIG.USE_API) {
+      reject(new Error('API disabled'));
       return;
     }
     
-    const url = new URL(CONFIG.API_URL);
-    url.searchParams.append('action', action);
-    url.searchParams.append('callback', 'callback');
+    // Build URL with parameters
+    let url = CONFIG.API_URL;
+    const queryParams = new URLSearchParams();
+    queryParams.append('action', action);
+    queryParams.append('callback', 'callback');
+    
+    // Add all params
     Object.keys(params).forEach(key => {
-      url.searchParams.append(key, params[key]);
+      queryParams.append(key, params[key]);
     });
     
-    fetch(url.toString(), { method: 'GET' })
+    // If URL already has ? use &, else use ?
+    if (url.includes('?')) {
+      url += '&' + queryParams.toString();
+    } else {
+      url += '?' + queryParams.toString();
+    }
+    
+    console.log('📡 Calling API:', url);
+    
+    fetch(url, { method: 'GET' })
       .then(response => response.text())
       .then(text => {
         try {
-          const json = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
-          const data = JSON.parse(json);
+          // Parse JSONP response
+          const jsonStr = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+          const data = JSON.parse(jsonStr);
           resolve(data);
         } catch(e) {
-          reject(e);
+          console.error('Parse error:', e, text);
+          reject(new Error('Invalid response from server'));
         }
       })
-      .catch(reject);
+      .catch(err => {
+        console.error('Fetch error:', err);
+        reject(err);
+      });
   });
 }
 
@@ -390,32 +480,28 @@ function callAPI(action, params = {}) {
 // CHECK CONNECTION
 // ============================================================
 function checkConnection() {
+  const statusEl = $('statusText');
+  statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+  
   if (!CONFIG.USE_API) {
     isOnline = false;
-    updateStatus(false);
+    statusEl.innerHTML = '<i class="fas fa-wifi-slash text-red-500"></i> API Disabled';
     return;
   }
   
   callAPI('ping')
-    .then(() => {
+    .then(result => {
       isOnline = true;
-      updateStatus(true);
+      statusEl.innerHTML = '<i class="fas fa-wifi text-green-500"></i> Online';
+      statusEl.className = 'status-online';
+      console.log('✅ API Connected');
     })
-    .catch(() => {
+    .catch(err => {
       isOnline = false;
-      updateStatus(false);
+      statusEl.innerHTML = '<i class="fas fa-wifi-slash text-red-500"></i> Offline';
+      statusEl.className = 'status-offline';
+      console.warn('❌ API Offline:', err.message);
     });
-}
-
-function updateStatus(online) {
-  const el = $('statusText');
-  if (online) {
-    el.innerHTML = '<i class="fas fa-wifi text-green-500"></i> Online';
-    el.className = 'status-online';
-  } else {
-    el.innerHTML = '<i class="fas fa-wifi-slash text-red-500"></i> Offline';
-    el.className = 'status-offline';
-  }
 }
 
 // ============================================================
@@ -428,10 +514,10 @@ function setRole(role) {
     const login = $(r + 'Login');
     if (r === role) {
       btn.className = 'flex-1 py-2 px-4 rounded-lg font-semibold bg-blue-500 text-white';
-      login.classList.remove('hidden');
+      if (login) login.classList.remove('hidden');
     } else {
       btn.className = 'flex-1 py-2 px-4 rounded-lg font-semibold bg-gray-200 text-gray-600';
-      login.classList.add('hidden');
+      if (login) login.classList.add('hidden');
     }
   });
   $('loginError').classList.add('hidden');
@@ -450,25 +536,32 @@ async function loginStudent() {
     return;
   }
   
+  if (!isOnline) {
+    showLoginError('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
+    showLoginError('⏳ Memeriksa data...');
     const student = await callAPI('getStudentByNameAndClass', { name, class_ });
     
     if (!student || !student.id) {
-      showLoginError('Siswa tidak ditemukan');
+      showLoginError('❌ Siswa tidak ditemukan');
       return;
     }
     
     if (student.password !== password) {
-      showLoginError('PIN salah. Default: 51sw@qu');
+      showLoginError('❌ PIN salah. Default: 51sw@qu');
       return;
     }
     
     currentStudent = student;
     currentUser = student;
     currentRole = 'student';
+    $('loginError').classList.add('hidden');
     showStudentDashboard();
   } catch(e) {
-    showLoginError('Error: ' + e.message);
+    showLoginError('❌ Error: ' + e.message);
   }
 }
 
@@ -481,30 +574,37 @@ async function loginWali() {
     return;
   }
   
+  if (!isOnline) {
+    showLoginError('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
+    showLoginError('⏳ Memeriksa data...');
     const user = await callAPI('getUserByEmail', { email });
     
     if (!user || !user.id) {
-      showLoginError('Email tidak ditemukan');
+      showLoginError('❌ Email tidak ditemukan');
       return;
     }
     
     if (user.password !== password) {
-      showLoginError('Password salah. Default: d4Rm@app');
+      showLoginError('❌ Password salah. Default: d4Rm@app');
       return;
     }
     
     if (user.role !== 'wali') {
-      showLoginError('Akun ini bukan Wali Kelas');
+      showLoginError('❌ Akun ini bukan Wali Kelas');
       return;
     }
     
     currentWali = user;
     currentUser = user;
     currentRole = 'wali';
+    $('loginError').classList.add('hidden');
     showWaliDashboard();
   } catch(e) {
-    showLoginError('Error: ' + e.message);
+    showLoginError('❌ Error: ' + e.message);
   }
 }
 
@@ -517,29 +617,36 @@ async function loginAdmin() {
     return;
   }
   
+  if (!isOnline) {
+    showLoginError('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
+    showLoginError('⏳ Memeriksa data...');
     const user = await callAPI('getUserByEmail', { email });
     
     if (!user || !user.id) {
-      showLoginError('Email tidak ditemukan');
+      showLoginError('❌ Email tidak ditemukan');
       return;
     }
     
     if (user.password !== password) {
-      showLoginError('Password salah. Default: d4Rm@app');
+      showLoginError('❌ Password salah. Default: d4Rm@app');
       return;
     }
     
     if (user.role !== 'super_admin') {
-      showLoginError('Akun ini bukan Admin Super');
+      showLoginError('❌ Akun ini bukan Admin Super');
       return;
     }
     
     currentUser = user;
     currentRole = 'admin';
+    $('loginError').classList.add('hidden');
     showAdminDashboard();
   } catch(e) {
-    showLoginError('Error: ' + e.message);
+    showLoginError('❌ Error: ' + e.message);
   }
 }
 
@@ -602,28 +709,30 @@ function logout() {
 
 function updateDateTime() {
   const now = new Date();
-  $('dateDisplay').textContent = now.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  const el = $('dateDisplay');
+  if (el) {
+    el.textContent = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
 }
 
 // ============================================================
 // STUDENT FUNCTIONS
 // ============================================================
 async function loadStudentData() {
+  if (!isOnline) return;
   try {
-    // Load potensi
     const potensi = await callAPI('getPotensi', { studentId: currentStudent.id });
-    if (potensi) {
+    if (potensi && potensi.id) {
       $('recentActivity').innerHTML = '🗺️ Peta Potensi sudah diisi';
     }
     
-    // Load perbuatan hari ini
     const pb = await callAPI('getPerbuatanHariIni', { studentId: currentStudent.id });
-    if (pb) {
+    if (pb && pb.id) {
       $('recentActivity').innerHTML = '⭐ Perbuatan baik: ' + pb.action;
     }
   } catch(e) {
@@ -632,6 +741,8 @@ async function loadStudentData() {
 }
 
 function openCurhat() {
+  curhatStep = 0;
+  curhatData = {};
   show('curhatModal');
   $('curhatFlow').innerHTML = '<div class="text-gray-500">Mulai curhat dengan memilih di bawah</div>';
   $('curhatOptions').innerHTML = `
@@ -641,8 +752,6 @@ function openCurhat() {
   $('curhatTextArea').classList.add('hidden');
   $('curhatResult').classList.add('hidden');
 }
-
-let curhatData = {};
 
 function curhatStep1(siapa) {
   curhatData.untuk_siapa = siapa;
@@ -689,6 +798,11 @@ async function submitCurhat() {
     return;
   }
   
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
     const result = await callAPI('addCurhat', {
       studentId: currentStudent.id,
@@ -709,9 +823,11 @@ async function submitCurhat() {
       if (curhatData.darurat === 'Aku butuh bantuan sekarang') {
         alert('⚠️ Kami akan segera menghubungimu! Tetap tenang ya.');
       }
+    } else {
+      alert('❌ Gagal: ' + (result.error || 'Unknown error'));
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -734,6 +850,11 @@ async function simpanJurnal() {
   const emoji = $('jurnalEmoji').value;
   const cerita = $('jurnalCerita').value.trim() || 'Hari ini biasa saja.';
   
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
     const result = await callAPI('addJurnal', {
       studentId: currentStudent.id,
@@ -748,7 +869,7 @@ async function simpanJurnal() {
       setTimeout(() => closeModal('jurnalModal'), 1500);
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -767,6 +888,11 @@ async function catatPerbuatan(action) {
     return;
   }
   
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
     const result = await callAPI('addPerbuatanBaik', {
       studentId: currentStudent.id,
@@ -782,7 +908,7 @@ async function catatPerbuatan(action) {
       alert(result.error || 'Gagal mencatat');
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -798,6 +924,11 @@ async function simpanPotensi() {
   const gaya = $('potensiGaya').value;
   const cita = $('potensiCita').value.trim() || 'Belum diisi';
   const karakter = $('potensiKarakter').value;
+  
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
   
   try {
     const result = await callAPI('savePotensi', {
@@ -815,7 +946,7 @@ async function simpanPotensi() {
       $('recentActivity').innerHTML = '🗺️ Peta Potensi disimpan';
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -823,15 +954,20 @@ async function simpanPotensi() {
 // WALI FUNCTIONS
 // ============================================================
 async function loadWaliData() {
+  if (!isOnline) {
+    $('studentList').innerHTML = '<div class="text-red-500 text-center">⚠️ Koneksi offline</div>';
+    return;
+  }
+  
   try {
     const students = await callAPI('getStudentsByWali', { waliId: currentWali.id });
-    $('totalSiswa').textContent = students.length;
+    $('totalSiswa').textContent = students ? students.length : 0;
     
     const curhat = await callAPI('getAllCurhat');
-    const waliCurhat = curhat.filter(c => {
-      const student = students.find(s => s.id === c.student_id);
+    const waliCurhat = curhat ? curhat.filter(c => {
+      const student = students ? students.find(s => s.id === c.student_id) : null;
       return student !== undefined;
-    });
+    }) : [];
     
     const unread = waliCurhat.filter(c => c.is_read === false || c.is_read === 'FALSE');
     const darurat = waliCurhat.filter(c => c.tingkat_darurat === 'Aku butuh bantuan sekarang');
@@ -881,8 +1017,8 @@ function renderCurhatInbox(curhats) {
       </div>
       <div class="text-sm">${c.cerita}</div>
       <div class="flex gap-2 mt-1">
-        <span class="text-xs bg-blue-100 px-2 py-0.5 rounded">${c.kategori}</span>
-        ${c.tingkat_darurat === 'Aku butuh bantuan sekarang' ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">⚠️ Darurat</span>' : ''}
+        <span class="badge badge-blue">${c.kategori}</span>
+        ${c.tingkat_darurat === 'Aku butuh bantuan sekarang' ? '<span class="badge badge-red">⚠️ Darurat</span>' : ''}
       </div>
       <button onclick="balasCurhat('${c.id}')" class="btn-primary text-xs py-1 px-3 mt-2">
         <i class="fas fa-reply mr-1"></i> Balas
@@ -907,6 +1043,11 @@ async function tambahSiswa() {
     return;
   }
   
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
     const result = await callAPI('addStudent', {
       nis: nis,
@@ -924,27 +1065,39 @@ async function tambahSiswa() {
       alert('❌ ' + result.error);
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
 async function deleteStudent(id) {
   if (!confirm('Yakin ingin menghapus siswa ini?')) return;
   
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
+  
   try {
     const result = await callAPI('deleteStudent', { studentId: id });
     if (result.success) {
       alert('✅ Siswa dihapus');
       loadWaliData();
+    } else {
+      alert('❌ ' + result.error);
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
 async function balasCurhat(curhatId) {
   const message = prompt('Tulis balasan untuk curhat ini:');
   if (!message) return;
+  
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
   
   try {
     const result = await callAPI('addCurhatReply', {
@@ -959,9 +1112,11 @@ async function balasCurhat(curhatId) {
     if (result.success) {
       alert('✅ Balasan terkirim!');
       loadWaliData();
+    } else {
+      alert('❌ ' + result.error);
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -969,15 +1124,20 @@ async function balasCurhat(curhatId) {
 // ADMIN FUNCTIONS
 // ============================================================
 async function loadAdminData() {
+  if (!isOnline) {
+    $('waliList').innerHTML = '<div class="text-red-500 text-center">⚠️ Koneksi offline</div>';
+    return;
+  }
+  
   try {
     const users = await callAPI('getAllUsers');
     const students = await callAPI('getAllStudents');
     const curhat = await callAPI('getAllCurhat');
     
-    const waliUsers = users.filter(u => u.role === 'wali');
+    const waliUsers = users ? users.filter(u => u.role === 'wali') : [];
     $('totalWaliAdmin').textContent = waliUsers.length;
-    $('totalSiswaAdmin').textContent = students.length;
-    $('totalCurhatAdmin').textContent = curhat.length;
+    $('totalSiswaAdmin').textContent = students ? students.length : 0;
+    $('totalCurhatAdmin').textContent = curhat ? curhat.length : 0;
     
     renderWaliList(waliUsers);
   } catch(e) {
@@ -1010,13 +1170,18 @@ function showTambahWali() {
 }
 
 async function tambahWali() {
-  const name = $('waliNama').value.trim();
-  const email = $('waliEmail').value.trim();
-  const kelas = $('waliKelas').value.trim();
-  const password = $('waliPassword').value.trim() || 'd4Rm@app';
+  const name = $('waliNamaBaru').value.trim();
+  const email = $('waliEmailBaru').value.trim();
+  const kelas = $('waliKelasBaru').value.trim();
+  const password = $('waliPasswordBaru').value.trim() || 'd4Rm@app';
   
   if (!name || !email || !kelas) {
     alert('Mohon isi semua data');
+    return;
+  }
+  
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
     return;
   }
   
@@ -1037,12 +1202,17 @@ async function tambahWali() {
       alert('❌ ' + result.error);
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
 async function deleteWali(id) {
   if (!confirm('Yakin ingin menghapus wali ini?')) return;
+  
+  if (!isOnline) {
+    alert('⚠️ Koneksi offline. Periksa internet Anda.');
+    return;
+  }
   
   try {
     const result = await callAPI('deleteUser', { userId: id });
@@ -1053,7 +1223,7 @@ async function deleteWali(id) {
       alert('❌ ' + result.error);
     }
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('❌ Error: ' + e.message);
   }
 }
 
@@ -1062,16 +1232,33 @@ async function deleteWali(id) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   setRole('student');
-  checkConnection();
+  
+  // Check connection after 1 second
+  setTimeout(checkConnection, 1000);
   setInterval(checkConnection, 30000);
   
-  console.log('🏫 Wali Digital v8.0');
+  console.log('🏫 Wali Digital v8.1');
   console.log('📌 Default Login:');
   console.log('  Siswa: Ahmad Fauzi / 7A / 51sw@qu');
   console.log('  Wali: wali@walidigital.com / d4Rm@app');
   console.log('  Admin: admin@walidigital.com / d4Rm@app');
+  console.log('🔗 API URL:', CONFIG.API_URL);
+});
+
+// Handle Enter key for login
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    if (!document.getElementById('loginPage').classList.contains('hidden')) {
+      if (!document.getElementById('studentLogin').classList.contains('hidden')) {
+        loginStudent();
+      } else if (!document.getElementById('waliLogin').classList.contains('hidden')) {
+        loginWali();
+      } else if (!document.getElementById('adminLogin').classList.contains('hidden')) {
+        loginAdmin();
+      }
+    }
+  }
 });
 </script>
-
 </body>
 </html>
