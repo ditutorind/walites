@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ===== RESET & BASE ===== */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
     body {
@@ -19,7 +18,6 @@
       overflow-x: hidden;
     }
 
-    /* ===== BACKGROUND UNSPLASH - SUASANA KELAS ===== */
     .bg-hero {
       position: fixed;
       inset: 0;
@@ -31,7 +29,6 @@
       transform: scale(1.05);
     }
 
-    /* ===== OVERLAY GRADIENT ===== */
     .bg-overlay {
       position: fixed;
       inset: 0;
@@ -43,7 +40,6 @@
       backdrop-filter: blur(2px);
     }
 
-    /* ===== GLASSMORPHISM CARD ===== */
     .glass {
       background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(20px) saturate(180%);
@@ -65,7 +61,6 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
-    /* ===== GLASS BUTTON ===== */
     .btn-glass {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
@@ -146,7 +141,6 @@
       box-shadow: 0 8px 32px rgba(212, 160, 23, 0.3);
     }
 
-    /* ===== GLASS INPUT ===== */
     .input-glass {
       background: rgba(255, 255, 255, 0.06);
       backdrop-filter: blur(10px);
@@ -172,12 +166,6 @@
       box-shadow: 0 0 0 4px rgba(74, 155, 199, 0.1);
     }
 
-    .input-glass option {
-      background: #1a1a2e;
-      color: white;
-    }
-
-    /* ===== GLASS SELECT ===== */
     .select-glass {
       background: rgba(255, 255, 255, 0.06);
       backdrop-filter: blur(10px);
@@ -209,7 +197,6 @@
       color: white;
     }
 
-    /* ===== TEXT GLASS ===== */
     .text-glass {
       color: rgba(255, 255, 255, 0.9);
       text-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -219,7 +206,6 @@
       color: rgba(255, 255, 255, 0.5);
     }
 
-    /* ===== BADGE GLASS ===== */
     .badge-glass {
       display: inline-block;
       padding: 4px 14px;
@@ -257,7 +243,6 @@
       color: #6db8e0;
     }
 
-    /* ===== STATUS INDICATOR ===== */
     .status-indicator {
       display: inline-flex;
       align-items: center;
@@ -295,7 +280,6 @@
       50% { opacity: 0.5; }
     }
 
-    /* ===== MODAL GLASS ===== */
     .modal-glass {
       background: rgba(15, 15, 26, 0.7);
       backdrop-filter: blur(20px);
@@ -316,7 +300,6 @@
       to { transform: scale(1) translateY(0); opacity: 1; }
     }
 
-    /* ===== MODAL OVERLAY ===== */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -335,7 +318,6 @@
       to { opacity: 1; }
     }
 
-    /* ===== GRID BACKGROUND ===== */
     .grid-bg {
       position: fixed;
       inset: 0;
@@ -347,7 +329,6 @@
       pointer-events: none;
     }
 
-    /* ===== FLOATING ORBS ===== */
     .orb {
       position: fixed;
       border-radius: 50%;
@@ -390,7 +371,6 @@
       66% { transform: translate(-20px, 20px) scale(0.9); }
     }
 
-    /* ===== SCROLLBAR ===== */
     ::-webkit-scrollbar {
       width: 4px;
     }
@@ -405,10 +385,8 @@
       background: rgba(255,255,255,0.25);
     }
 
-    /* ===== HIDE DEFAULT ===== */
     .hidden { display: none !important; }
 
-    /* ===== TOAST ===== */
     .toast {
       position: fixed;
       bottom: 24px;
@@ -449,7 +427,6 @@
       to { transform: translateX(-50%) translateY(0); opacity: 1; }
     }
 
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 480px) {
       .glass { border-radius: 18px; }
       .modal-glass { padding: 20px; border-radius: 20px; }
@@ -460,7 +437,6 @@
 </head>
 <body>
 
-<!-- ===== BACKGROUND ===== -->
 <div class="bg-hero"></div>
 <div class="bg-overlay"></div>
 <div class="grid-bg"></div>
@@ -468,13 +444,10 @@
 <div class="orb orb-2"></div>
 <div class="orb orb-3"></div>
 
-<!-- ===== TOAST CONTAINER ===== -->
 <div id="toastContainer"></div>
 
-<!-- ===== APP ===== -->
 <div id="app" class="relative z-10 max-w-lg mx-auto p-4" style="padding-bottom: 80px;">
 
-  <!-- ===== CONNECTION STATUS ===== -->
   <div class="flex justify-end items-center gap-3 mb-4">
     <div class="status-indicator">
       <span class="status-dot offline" id="statusDot"></span>
@@ -485,10 +458,9 @@
     </button>
   </div>
 
-  <!-- ===== LOGIN PAGE ===== -->
   <div id="loginPage" class="glass p-8 mt-2">
     <div class="text-center mb-8">
-      <div class="text-6xl mb-3 glow-icon">🏫</div>
+      <div class="text-6xl mb-3">🏫</div>
       <h1 class="text-4xl font-bold text-glass" style="font-weight: 800; letter-spacing: -0.5px;">
         Wali Digital
       </h1>
@@ -497,7 +469,6 @@
       </p>
     </div>
 
-    <!-- Role Selector -->
     <div class="flex gap-2 mb-6">
       <button id="roleStudent" class="flex-1 py-2.5 px-3 rounded-xl font-semibold text-sm bg-white/20 text-white border border-white/10" onclick="setRole('student')">
         <i class="fas fa-user-graduate mr-1.5"></i> Siswa
@@ -510,7 +481,6 @@
       </button>
     </div>
 
-    <!-- Student Login -->
     <div id="studentLogin" class="space-y-3">
       <input id="studentName" class="input-glass" placeholder="Nama Lengkap" />
       <input id="studentClass" class="input-glass" placeholder="Kelas (contoh: 7A)" />
@@ -520,7 +490,6 @@
       </button>
     </div>
 
-    <!-- Wali Login -->
     <div id="waliLogin" class="space-y-3 hidden">
       <input id="waliEmail" class="input-glass" placeholder="Email Wali" />
       <input id="waliPassword" class="input-glass" type="password" placeholder="Password (default: d4Rm@app)" />
@@ -529,7 +498,6 @@
       </button>
     </div>
 
-    <!-- Admin Login -->
     <div id="adminLogin" class="space-y-3 hidden">
       <input id="adminEmail" class="input-glass" placeholder="Email Admin" />
       <input id="adminPassword" class="input-glass" type="password" placeholder="Password (default: d4Rm@app)" />
@@ -541,9 +509,7 @@
     <div id="loginError" class="text-red-400/80 text-sm mt-3 hidden text-center"></div>
   </div>
 
-  <!-- ===== DASHBOARD SISWA ===== -->
   <div id="studentDashboard" class="hidden">
-    <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
         <h2 class="text-2xl font-bold text-glass">
@@ -556,7 +522,6 @@
       </button>
     </div>
 
-    <!-- Quick Actions -->
     <div class="grid grid-cols-2 gap-3 mb-4">
       <div class="glass p-5 text-center cursor-pointer hover:scale-105 transition" onclick="openCurhat()">
         <i class="fas fa-comment-dots text-3xl text-purple-300"></i>
@@ -580,7 +545,6 @@
       </div>
     </div>
 
-    <!-- Recent Activity -->
     <div class="glass p-5">
       <h3 class="font-bold text-glass mb-3">
         <i class="fas fa-bolt text-yellow-300 mr-2"></i>Aktivitas Terakhir
@@ -589,9 +553,7 @@
     </div>
   </div>
 
-  <!-- ===== DASHBOARD WALI ===== -->
   <div id="waliDashboard" class="hidden">
-    <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
         <h2 class="text-2xl font-bold text-glass">
@@ -604,7 +566,6 @@
       </button>
     </div>
 
-    <!-- Stats -->
     <div class="grid grid-cols-3 gap-2 mb-4">
       <div class="glass p-4 text-center">
         <div class="text-2xl font-bold text-blue-300" id="totalSiswa">0</div>
@@ -620,7 +581,6 @@
       </div>
     </div>
 
-    <!-- Student List -->
     <div class="glass p-5 mb-4">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-glass"><i class="fas fa-users mr-2"></i>Daftar Siswa</h3>
@@ -631,16 +591,13 @@
       <div id="studentList" class="space-y-2"></div>
     </div>
 
-    <!-- Curhat Inbox -->
     <div class="glass p-5">
       <h3 class="font-bold text-glass mb-4"><i class="fas fa-inbox mr-2"></i>Curhat Masuk</h3>
       <div id="curhatInbox" class="space-y-2"></div>
     </div>
   </div>
 
-  <!-- ===== DASHBOARD ADMIN ===== -->
   <div id="adminDashboard" class="hidden">
-    <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
         <h2 class="text-2xl font-bold text-glass">
@@ -653,7 +610,6 @@
       </button>
     </div>
 
-    <!-- Stats -->
     <div class="grid grid-cols-3 gap-2 mb-4">
       <div class="glass p-4 text-center">
         <div class="text-2xl font-bold text-blue-300" id="totalWaliAdmin">0</div>
@@ -669,7 +625,6 @@
       </div>
     </div>
 
-    <!-- Wali List -->
     <div class="glass p-5">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-glass"><i class="fas fa-chalkboard-teacher mr-2"></i>Wali Kelas</h3>
@@ -681,9 +636,7 @@
     </div>
   </div>
 
-  <!-- ===== MODALS ===== -->
-  
-  <!-- Curhat Modal -->
+  <!-- MODALS -->
   <div id="curhatModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('curhatModal')">
     <div class="modal-glass">
       <div class="flex justify-between items-center mb-5">
@@ -704,7 +657,6 @@
     </div>
   </div>
 
-  <!-- Jurnal Modal -->
   <div id="jurnalModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('jurnalModal')">
     <div class="modal-glass">
       <div class="flex justify-between items-center mb-5">
@@ -729,7 +681,6 @@
     </div>
   </div>
 
-  <!-- Perbuatan Baik Modal -->
   <div id="perbuatanModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('perbuatanModal')">
     <div class="modal-glass">
       <div class="flex justify-between items-center mb-5">
@@ -762,7 +713,6 @@
     </div>
   </div>
 
-  <!-- Potensi Modal -->
   <div id="potensiModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('potensiModal')">
     <div class="modal-glass">
       <div class="flex justify-between items-center mb-5">
@@ -801,7 +751,6 @@
     </div>
   </div>
 
-  <!-- Tambah Siswa Modal -->
   <div id="tambahSiswaModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('tambahSiswaModal')">
     <div class="modal-glass">
       <div class="flex justify-between items-center mb-5">
@@ -822,7 +771,6 @@
     </div>
   </div>
 
-  <!-- Tambah Wali Modal -->
   <div id="tambahWaliModal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('tambahWaliModal')">
     <div class="modal-glass">
       <div class="flex justify-between items-center mb-5">
@@ -1013,7 +961,7 @@ function setRole(role) {
 }
 
 // ============================================================
-// LOGIN FUNCTIONS
+// LOGIN FUNCTIONS - FIXED
 // ============================================================
 async function loginStudent() {
   const name = $('studentName').value.trim();
@@ -1032,10 +980,17 @@ async function loginStudent() {
   
   try {
     showLoginError('⏳ Memeriksa data...');
-    const student = await callAPI('getStudentByNameAndClass', { name, class_ });
+    
+    // 🔥 FIX: Kirim sebagai 'class' (tanpa underscore)
+    const student = await callAPI('getStudentByNameAndClass', { 
+      name: name, 
+      class: class_
+    });
+    
+    console.log('📡 Student data:', student);
     
     if (!student || !student.id) {
-      showLoginError('❌ Siswa tidak ditemukan');
+      showLoginError('❌ Siswa tidak ditemukan. Periksa nama dan kelas.');
       return;
     }
     
@@ -1051,6 +1006,7 @@ async function loginStudent() {
     showStudentDashboard();
     showToast('✅ Selamat datang, ' + student.name + '!', 'success');
   } catch(e) {
+    console.error('Login error:', e);
     showLoginError('❌ Error: ' + e.message);
   }
 }
@@ -1529,6 +1485,7 @@ function showTambahSiswa() {
   show('tambahSiswaModal');
 }
 
+// 🔥 FIX: tambahSiswa dengan parameter 'class'
 async function tambahSiswa() {
   const nis = $('siswaNIS').value.trim();
   const name = $('siswaNama').value.trim();
@@ -1667,6 +1624,7 @@ function showTambahWali() {
   show('tambahWaliModal');
 }
 
+// 🔥 FIX: tambahWali dengan parameter 'class'
 async function tambahWali() {
   const name = $('waliNamaBaru').value.trim();
   const email = $('waliEmailBaru').value.trim();
@@ -1731,20 +1689,17 @@ async function deleteWali(id) {
 document.addEventListener('DOMContentLoaded', function() {
   setRole('student');
   
-  // Check connection after 1.5 seconds
   setTimeout(checkConnection, 1500);
   setInterval(checkConnection, 30000);
   
-  console.log('🏫 Wali Digital v9.0 - Premium Glassmorphism');
+  console.log('🏫 Wali Digital v9.1 - FIXED');
   console.log('📌 Default Login:');
   console.log('  Siswa: Ahmad Fauzi / 7A / 51sw@qu');
   console.log('  Wali: wali@walidigital.com / d4Rm@app');
   console.log('  Admin: admin@walidigital.com / d4Rm@app');
   console.log('🔗 API URL:', CONFIG.API_URL);
-  console.log('🎨 Design: Glassmorphism + Unsplash Background');
 });
 
-// Enter key untuk login
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     if (!document.getElementById('loginPage').classList.contains('hidden')) {
